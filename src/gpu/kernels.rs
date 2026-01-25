@@ -69,7 +69,7 @@ pub fn ternary_bind_kernel<I: Int>(
     #[comptime] len: u32,
 ) {
     let idx = ABSOLUTE_POS;
-    if idx < len {
+    if idx < (len as usize) {
         // Balanced ternary bind: (a + b + 1) mod 3
         // Using manual modulo to avoid potential issues with negative intermediate values
         let sum = a[idx] + b[idx] + I::new(1);
@@ -99,7 +99,7 @@ pub fn ternary_unbind_kernel<I: Int>(
     #[comptime] len: u32,
 ) {
     let idx = ABSOLUTE_POS;
-    if idx < len {
+    if idx < (len as usize) {
         // Unbind: (a - b + 3) mod 3
         // Adding 3 ensures we stay non-negative before modulo
         let diff = a[idx] - b[idx] + I::new(3);
@@ -116,7 +116,7 @@ pub fn ternary_unbind_kernel<I: Int>(
 #[cube(launch)]
 pub fn ternary_negate_kernel<I: Int>(input: &Array<I>, out: &mut Array<I>, #[comptime] len: u32) {
     let idx = ABSOLUTE_POS;
-    if idx < len {
+    if idx < (len as usize) {
         // Negate: (2 - input) gives: 0→2, 1→1, 2→0
         out[idx] = I::new(2) - input[idx];
     }
@@ -148,7 +148,7 @@ pub fn ternary_bundle_count_kernel<I: Int>(
     #[comptime] dim: u32,
 ) {
     let pos = ABSOLUTE_POS;
-    if pos < dim {
+    if pos < (dim as usize) {
         // Count each trit value at this position across all vectors
         let mut count_neg = I::new(0); // encoded 0 (trit -1)
         let mut count_zero = I::new(0); // encoded 1 (trit 0)
@@ -157,7 +157,7 @@ pub fn ternary_bundle_count_kernel<I: Int>(
         // Iterate over all vectors
         #[unroll]
         for i in 0..num_vectors {
-            let val = vectors[i * dim + pos];
+            let val = vectors[(i * dim) as usize + pos];
             // Use arithmetic comparison instead of equality for better GPU performance
             // val == 0: val is 0, val - 1 is -1, val - 2 is -2
             let is_neg = I::new(1) - (val + I::new(1)) / I::new(2);
@@ -174,8 +174,8 @@ pub fn ternary_bundle_count_kernel<I: Int>(
 
         // Store counts in output array
         counts[pos] = count_neg;
-        counts[dim + pos] = count_zero;
-        counts[dim * 2 + pos] = count_pos;
+        counts[(dim as usize) + pos] = count_zero;
+        counts[((dim * 2) as usize) + pos] = count_pos;
     }
 }
 
@@ -190,14 +190,14 @@ pub fn ternary_bundle_small_kernel<I: Int>(
     #[comptime] dim: u32,
 ) {
     let pos = ABSOLUTE_POS;
-    if pos < dim {
+    if pos < (dim as usize) {
         let mut count_neg = I::new(0);
         let mut count_zero = I::new(0);
         let mut count_pos = I::new(0);
 
         #[unroll]
         for i in 0..num_vectors {
-            let val = vectors[i * dim + pos];
+            let val = vectors[(i * dim) as usize + pos];
             if val == I::new(0) {
                 count_neg = count_neg + I::new(1);
             } else if val == I::new(1) {
@@ -235,10 +235,10 @@ pub fn ternary_majority_kernel<I: Int>(
     #[comptime] dim: u32,
 ) {
     let pos = ABSOLUTE_POS;
-    if pos < dim {
+    if pos < (dim as usize) {
         let count_neg = counts[pos];
-        let count_zero = counts[dim + pos];
-        let count_pos = counts[dim * 2 + pos];
+        let count_zero = counts[(dim as usize) + pos];
+        let count_pos = counts[((dim * 2) as usize) + pos];
 
         // Find maximum - ties go to zero (neutral)
         if count_neg > count_zero && count_neg > count_pos {
@@ -271,10 +271,10 @@ pub fn ternary_majority_kernel<I: Int>(
 /// * `partial_sums` - Output array for block partial sums
 /// * `len` - Vector length
 #[cube(launch)]
-pub fn ternary_dot_kernel<I: Int>(
-    a: &Array<I>,
-    b: &Array<I>,
-    partial_sums: &mut Array<I>,
+pub fn ternary_dot_kernel(
+    a: &Array<u32>,
+    b: &Array<u32>,
+    partial_sums: &mut Array<u32>,
     #[comptime] len: u32,
 ) {
     let idx = ABSOLUTE_POS;
@@ -282,61 +282,61 @@ pub fn ternary_dot_kernel<I: Int>(
     let thread_idx = UNIT_POS_X;
 
     // Allocate shared memory for block reduction
-    let mut shared = SharedMemory::<I>::new(256);
+    let mut shared = SharedMemory::<u32>::new(256usize);
 
     // Each thread computes one element-wise product
-    let mut product = I::new(0);
-    if idx < len {
+    let mut product: u32 = 0u32;
+    if idx < (len as usize) {
         // Decode from {0,1,2} to {-1,0,+1} by subtracting 1
-        let a_val = a[idx] - I::new(1);
-        let b_val = b[idx] - I::new(1);
+        let a_val: u32 = a[idx] - 1u32;
+        let b_val: u32 = b[idx] - 1u32;
         product = a_val * b_val;
     }
 
-    shared[thread_idx] = product;
-    sync_units();
+    shared[thread_idx as usize] = product;
+    sync_cube();
 
     // Tree reduction within block
     // Block size is 256, so we do 8 iterations (256 -> 128 -> 64 -> 32 -> 16 -> 8 -> 4 -> 2 -> 1)
     if thread_idx < 128u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 128u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 128u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 64u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 64u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 64u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 32u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 32u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 32u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 16u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 16u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 16u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 8u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 8u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 8u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 4u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 4u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 4u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 2u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 2u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 2u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     // Thread 0 writes final block result
     if thread_idx == 0u32 {
-        let final_sum = shared[0u32] + shared[1u32];
-        partial_sums[block_idx] = final_sum;
+        let final_sum = shared[0usize] + shared[1usize];
+        partial_sums[block_idx as usize] = final_sum;
     }
 }
 
@@ -350,68 +350,68 @@ pub fn ternary_dot_kernel<I: Int>(
 /// * `partial_counts` - Output array for block partial counts
 /// * `len` - Vector length
 #[cube(launch)]
-pub fn ternary_hamming_kernel<I: Int>(
-    a: &Array<I>,
-    b: &Array<I>,
-    partial_counts: &mut Array<I>,
+pub fn ternary_hamming_kernel(
+    a: &Array<u32>,
+    b: &Array<u32>,
+    partial_counts: &mut Array<u32>,
     #[comptime] len: u32,
 ) {
     let idx = ABSOLUTE_POS;
     let block_idx = CUBE_POS_X;
     let thread_idx = UNIT_POS_X;
 
-    let mut shared = SharedMemory::<I>::new(256);
+    let mut shared = SharedMemory::<u32>::new(256usize);
 
     // Count if trits differ at this position
-    let mut diff = I::new(0);
-    if idx < len {
+    let mut diff: u32 = 0u32;
+    if idx < (len as usize) {
         if a[idx] != b[idx] {
-            diff = I::new(1);
+            diff = 1u32;
         }
     }
 
-    shared[thread_idx] = diff;
-    sync_units();
+    shared[thread_idx as usize] = diff;
+    sync_cube();
 
     // Tree reduction (same pattern as dot kernel)
     if thread_idx < 128u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 128u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 128u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 64u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 64u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 64u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 32u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 32u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 32u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 16u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 16u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 16u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 8u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 8u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 8u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 4u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 4u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 4u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 2u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 2u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 2u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx == 0u32 {
-        let final_count = shared[0u32] + shared[1u32];
-        partial_counts[block_idx] = final_count;
+        let final_count = shared[0usize] + shared[1usize];
+        partial_counts[block_idx as usize] = final_count;
     }
 }
 
@@ -420,61 +420,61 @@ pub fn ternary_hamming_kernel<I: Int>(
 /// Sums all partial block results into a single value.
 /// Used after `ternary_dot_kernel` or `ternary_hamming_kernel`.
 #[cube(launch)]
-pub fn final_reduction_kernel<I: Int>(
-    partial_sums: &Array<I>,
-    result: &mut Array<I>,
+pub fn final_reduction_kernel(
+    partial_sums: &Array<u32>,
+    result: &mut Array<u32>,
     #[comptime] num_blocks: u32,
 ) {
     let thread_idx = UNIT_POS_X;
 
-    let mut shared = SharedMemory::<I>::new(256);
+    let mut shared = SharedMemory::<u32>::new(256usize);
 
     // Load partial sums into shared memory
     if thread_idx < num_blocks {
-        shared[thread_idx] = partial_sums[thread_idx];
+        shared[thread_idx as usize] = partial_sums[thread_idx as usize];
     } else {
-        shared[thread_idx] = I::new(0);
+        shared[thread_idx as usize] = 0u32;
     }
-    sync_units();
+    sync_cube();
 
     // Tree reduction
     if thread_idx < 128u32 && thread_idx + 128u32 < 256u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 128u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 128u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 64u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 64u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 64u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 32u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 32u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 32u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 16u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 16u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 16u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 8u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 8u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 8u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 4u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 4u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 4u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx < 2u32 {
-        shared[thread_idx] = shared[thread_idx] + shared[thread_idx + 2u32];
+        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 2u32) as usize];
     }
-    sync_units();
+    sync_cube();
 
     if thread_idx == 0u32 {
-        result[0u32] = shared[0u32] + shared[1u32];
+        result[0usize] = shared[0usize] + shared[1usize];
     }
 }
 
@@ -505,7 +505,7 @@ pub fn final_reduction_kernel<I: Int>(
 #[cube(launch)]
 pub fn ternary_random_kernel(out: &mut Array<u32>, seeds: &Array<u32>, #[comptime] len: u32) {
     let idx = ABSOLUTE_POS;
-    if idx < len {
+    if idx < (len as usize) {
         // Xorshift32 PRNG
         let mut state = seeds[idx];
 
@@ -528,15 +528,16 @@ pub fn ternary_random_kernel(out: &mut Array<u32>, seeds: &Array<u32>, #[comptim
 #[cube(launch)]
 pub fn init_seeds_kernel(seeds: &mut Array<u32>, #[comptime] base_seed: u32, #[comptime] len: u32) {
     let idx = ABSOLUTE_POS;
-    if idx < len {
+    if idx < (len as usize) {
         // Mix base seed with position to create unique per-element seed
-        // Using golden ratio hash mixing
-        let mixed = base_seed + idx * 2654435769u32;
-        let mixed2 = mixed ^ (mixed >> 16u32);
-        let mixed3 = mixed2 * 2246822519u32;
-        let mixed4 = mixed3 ^ (mixed3 >> 13u32);
-        let mixed5 = mixed4 * 3266489917u32;
-        seeds[idx] = mixed5 ^ (mixed5 >> 16u32);
+        // Using MurmurHash3-style mixing (smaller constants to avoid overflow checks)
+        let mut mixed = base_seed ^ (idx as u32);
+        mixed ^= mixed >> 16u32;
+        mixed *= 0x85ebca6bu32;
+        mixed ^= mixed >> 13u32;
+        mixed *= 0xc2b2ae35u32;
+        mixed ^= mixed >> 16u32;
+        seeds[idx] = mixed;
     }
 }
 
@@ -560,9 +561,9 @@ pub fn bitsliced_to_encoded_kernel(
     #[comptime] num_dims: u32,
 ) {
     let idx = ABSOLUTE_POS;
-    if idx < num_dims {
-        let word_idx = idx / 32u32;
-        let bit_idx = idx % 32u32;
+    if idx < (num_dims as usize) {
+        let word_idx = idx / 32usize;
+        let bit_idx = (idx % 32usize) as u32;
         let mask = 1u32 << bit_idx;
 
         let is_plus = (plus_plane[word_idx] & mask) != 0u32;
@@ -596,18 +597,18 @@ pub fn encoded_to_bitsliced_word_kernel(
     #[comptime] num_dims: u32,
 ) {
     let word_idx = ABSOLUTE_POS;
-    if word_idx < num_words {
+    if word_idx < (num_words as usize) {
         let mut plus_word = 0u32;
         let mut minus_word = 0u32;
 
         // Process 32 trits for this word
-        let start_dim = word_idx * 32u32;
+        let start_dim = (word_idx as u32) * 32u32;
 
         #[unroll]
         for bit in 0u32..32u32 {
             let dim = start_dim + bit;
             if dim < num_dims {
-                let val = encoded[dim];
+                let val = encoded[(dim as usize)];
                 let mask = 1u32 << bit;
 
                 if val == 2i32 {

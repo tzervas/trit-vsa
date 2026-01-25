@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 // Copyright 2026 Tyler Zervas
 
+#![allow(unsafe_code)]
+
 //! High-level GPU operation wrappers for ternary VSA.
 //!
 //! This module provides ergonomic interfaces to the CubeCL kernels,
@@ -84,9 +86,7 @@ fn encoded_to_packed(encoded: &[i32], len: usize) -> PackedTritVec {
 
 /// Get CUDA client for kernel execution.
 fn get_cuda_client() -> Result<ComputeClient<CudaRuntime>> {
-    cubecl_cuda::CudaRuntime::client(&Default::default()).map_err(|e| {
-        CoreError::kernel_error(format!("Failed to create CUDA client: {e}"))
-    })
+    Ok(cubecl_cuda::CudaRuntime::client(&Default::default()))
 }
 
 // =============================================================================
@@ -126,7 +126,7 @@ impl GpuDispatchable for GpuBind {
         let (a, b) = input;
 
         if a.len() != b.len() {
-            return Err(CoreError::dimension_mismatch(format!(
+            return Err(CoreError::dim_mismatch(format!(
                 "bind requires equal dimensions: {} vs {}",
                 a.len(),
                 b.len()
@@ -145,16 +145,17 @@ impl GpuDispatchable for GpuBind {
         let b_encoded = packed_to_encoded(b);
 
         // Create GPU buffers
-        let a_handle = client.create(i32::as_bytes(&a_encoded));
-        let b_handle = client.create(i32::as_bytes(&b_encoded));
+        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&a_encoded).to_vec()));
+        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&b_encoded).to_vec()));
         let out_handle = client.empty(a_encoded.len() * std::mem::size_of::<i32>());
 
         // Launch kernel
         let cube_count = CubeCount::Static(grid_size(len, BLOCK_SIZE), 1, 1);
-        let cube_dim = CubeDim::new(BLOCK_SIZE, 1, 1);
+        let cube_dim = CubeDim::new(&client, BLOCK_SIZE as usize);
 
+        // SAFETY: Handles are valid and properly sized for the kernel operation
         unsafe {
-            ternary_bind_kernel::launch_unchecked::<i32, CudaRuntime>(
+            ternary_bind_kernel::launch::<i32, CudaRuntime>(
                 &client,
                 cube_count,
                 cube_dim,
@@ -162,11 +163,11 @@ impl GpuDispatchable for GpuBind {
                 ArrayArg::from_raw_parts::<i32>(&b_handle, len as usize, 1),
                 ArrayArg::from_raw_parts::<i32>(&out_handle, len as usize, 1),
                 len,
-            );
+            ).map_err(|e| CoreError::kernel(format!("bind kernel launch failed: {e}")))?;
         }
 
         // Read back results
-        let out_bytes = client.read_one(out_handle.binding());
+        let out_bytes = client.read_one(out_handle);
         let out_encoded: Vec<i32> = i32::from_bytes(&out_bytes).to_vec();
 
         Ok(encoded_to_packed(&out_encoded, a.len()))
@@ -201,7 +202,7 @@ impl GpuDispatchable for GpuUnbind {
         let (a, b) = input;
 
         if a.len() != b.len() {
-            return Err(CoreError::dimension_mismatch(format!(
+            return Err(CoreError::dim_mismatch(format!(
                 "unbind requires equal dimensions: {} vs {}",
                 a.len(),
                 b.len()
@@ -218,15 +219,16 @@ impl GpuDispatchable for GpuUnbind {
         let a_encoded = packed_to_encoded(a);
         let b_encoded = packed_to_encoded(b);
 
-        let a_handle = client.create(i32::as_bytes(&a_encoded));
-        let b_handle = client.create(i32::as_bytes(&b_encoded));
+        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&a_encoded).to_vec()));
+        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&b_encoded).to_vec()));
         let out_handle = client.empty(a_encoded.len() * std::mem::size_of::<i32>());
 
         let cube_count = CubeCount::Static(grid_size(len, BLOCK_SIZE), 1, 1);
-        let cube_dim = CubeDim::new(BLOCK_SIZE, 1, 1);
+        let cube_dim = CubeDim::new(&client, BLOCK_SIZE as usize);
 
+        // SAFETY: Handles are valid and properly sized for the kernel operation
         unsafe {
-            ternary_unbind_kernel::launch_unchecked::<i32, CudaRuntime>(
+            ternary_unbind_kernel::launch::<i32, CudaRuntime>(
                 &client,
                 cube_count,
                 cube_dim,
@@ -234,10 +236,10 @@ impl GpuDispatchable for GpuUnbind {
                 ArrayArg::from_raw_parts::<i32>(&b_handle, len as usize, 1),
                 ArrayArg::from_raw_parts::<i32>(&out_handle, len as usize, 1),
                 len,
-            );
+            ).map_err(|e| CoreError::kernel(format!("unbind kernel launch failed: {e}")))?;
         }
 
-        let out_bytes = client.read_one(out_handle.binding());
+        let out_bytes = client.read_one(out_handle);
         let out_encoded: Vec<i32> = i32::from_bytes(&out_bytes).to_vec();
 
         Ok(encoded_to_packed(&out_encoded, a.len()))
@@ -281,7 +283,7 @@ impl GpuDispatchable for GpuBundle {
         let dim = input[0].len();
         for v in input.iter().skip(1) {
             if v.len() != dim {
-                return Err(CoreError::dimension_mismatch(format!(
+                return Err(CoreError::dim_mismatch(format!(
                     "all vectors must have same dimensions: expected {}, got {}",
                     dim,
                     v.len()
@@ -303,15 +305,16 @@ impl GpuDispatchable for GpuBundle {
             flattened.extend(packed_to_encoded(vec));
         }
 
-        let vectors_handle = client.create(i32::as_bytes(&flattened));
+        let vectors_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&flattened).to_vec()));
         let out_handle = client.empty(dim * std::mem::size_of::<i32>());
 
         let cube_count = CubeCount::Static(grid_size(dim_u32, BLOCK_SIZE), 1, 1);
-        let cube_dim = CubeDim::new(BLOCK_SIZE, 1, 1);
+        let cube_dim = CubeDim::new(&client, BLOCK_SIZE as usize);
 
         // Use small bundle kernel for efficient single-pass processing
+        // SAFETY: Handles are valid and properly sized for the kernel operation
         unsafe {
-            ternary_bundle_small_kernel::launch_unchecked::<i32, CudaRuntime>(
+            ternary_bundle_small_kernel::launch::<i32, CudaRuntime>(
                 &client,
                 cube_count,
                 cube_dim,
@@ -319,10 +322,10 @@ impl GpuDispatchable for GpuBundle {
                 ArrayArg::from_raw_parts::<i32>(&out_handle, dim, 1),
                 num_vectors,
                 dim_u32,
-            );
+            ).map_err(|e| CoreError::kernel(format!("bundle_small kernel launch failed: {e}")))?;
         }
 
-        let out_bytes = client.read_one(out_handle.binding());
+        let out_bytes = client.read_one(out_handle);
         let out_encoded: Vec<i32> = i32::from_bytes(&out_bytes).to_vec();
 
         Ok(encoded_to_packed(&out_encoded, dim))
@@ -369,7 +372,7 @@ impl GpuDispatchable for GpuDotSimilarity {
         let (a, b) = input;
 
         if a.len() != b.len() {
-            return Err(CoreError::dimension_mismatch(format!(
+            return Err(CoreError::dim_mismatch(format!(
                 "dot requires equal dimensions: {} vs {}",
                 a.len(),
                 b.len()
@@ -386,8 +389,8 @@ impl GpuDispatchable for GpuDotSimilarity {
         let a_encoded = packed_to_encoded(a);
         let b_encoded = packed_to_encoded(b);
 
-        let a_handle = client.create(i32::as_bytes(&a_encoded));
-        let b_handle = client.create(i32::as_bytes(&b_encoded));
+        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&a_encoded).to_vec()));
+        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&b_encoded).to_vec()));
 
         // Calculate number of blocks for reduction
         let num_blocks = grid_size(len, BLOCK_SIZE);
@@ -395,39 +398,41 @@ impl GpuDispatchable for GpuDotSimilarity {
             client.empty(num_blocks as usize * std::mem::size_of::<i32>());
 
         let cube_count = CubeCount::Static(num_blocks, 1, 1);
-        let cube_dim = CubeDim::new(BLOCK_SIZE, 1, 1);
+        let cube_dim = CubeDim::new(&client, BLOCK_SIZE as usize);
 
         // First pass: compute partial sums per block
+        // SAFETY: Handles are valid and properly sized for the kernel operation
         unsafe {
-            ternary_dot_kernel::launch_unchecked::<i32, CudaRuntime>(
+            ternary_dot_kernel::launch::<CudaRuntime>(
                 &client,
                 cube_count,
                 cube_dim,
-                ArrayArg::from_raw_parts::<i32>(&a_handle, len as usize, 1),
-                ArrayArg::from_raw_parts::<i32>(&b_handle, len as usize, 1),
-                ArrayArg::from_raw_parts::<i32>(&partial_sums_handle, num_blocks as usize, 1),
+                ArrayArg::from_raw_parts::<u32>(&a_handle, len as usize, 1),
+                ArrayArg::from_raw_parts::<u32>(&b_handle, len as usize, 1),
+                ArrayArg::from_raw_parts::<u32>(&partial_sums_handle, num_blocks as usize, 1),
                 len,
-            );
+            ).map_err(|e| CoreError::kernel(format!("dot kernel launch failed: {e}")))?;
         }
 
         // Final reduction: sum all partial results
-        let result_handle = client.empty(std::mem::size_of::<i32>());
+        let result_handle = client.empty(std::mem::size_of::<u32>());
 
+        // SAFETY: Handles are valid and properly sized for the kernel operation
         unsafe {
-            final_reduction_kernel::launch_unchecked::<i32, CudaRuntime>(
+            final_reduction_kernel::launch::<CudaRuntime>(
                 &client,
                 CubeCount::Static(1, 1, 1),
-                CubeDim::new(BLOCK_SIZE, 1, 1),
-                ArrayArg::from_raw_parts::<i32>(&partial_sums_handle, num_blocks as usize, 1),
-                ArrayArg::from_raw_parts::<i32>(&result_handle, 1, 1),
+                CubeDim::new(&client, BLOCK_SIZE as usize),
+                ArrayArg::from_raw_parts::<u32>(&partial_sums_handle, num_blocks as usize, 1),
+                ArrayArg::from_raw_parts::<u32>(&result_handle, 1, 1),
                 num_blocks,
-            );
+            ).map_err(|e| CoreError::kernel(format!("final_reduction kernel launch failed: {e}")))?;
         }
 
-        let result_bytes = client.read_one(result_handle.binding());
-        let result: Vec<i32> = i32::from_bytes(&result_bytes).to_vec();
+        let result_bytes = client.read_one(result_handle);
+        let result: Vec<u32> = u32::from_bytes(&result_bytes).to_vec();
 
-        Ok(result.first().copied().unwrap_or(0))
+        Ok(result.first().copied().unwrap_or(0) as i32)
     }
 
     fn dispatch_cpu(&self, input: &Self::Input, device: &Device) -> Result<Self::Output> {
@@ -460,7 +465,7 @@ impl GpuDispatchable for GpuHammingDistance {
         let (a, b) = input;
 
         if a.len() != b.len() {
-            return Err(CoreError::dimension_mismatch(format!(
+            return Err(CoreError::dim_mismatch(format!(
                 "hamming requires equal dimensions: {} vs {}",
                 a.len(),
                 b.len()
@@ -477,43 +482,45 @@ impl GpuDispatchable for GpuHammingDistance {
         let a_encoded = packed_to_encoded(a);
         let b_encoded = packed_to_encoded(b);
 
-        let a_handle = client.create(i32::as_bytes(&a_encoded));
-        let b_handle = client.create(i32::as_bytes(&b_encoded));
+        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&a_encoded).to_vec()));
+        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&b_encoded).to_vec()));
 
         let num_blocks = grid_size(len, BLOCK_SIZE);
         let partial_counts_handle =
             client.empty(num_blocks as usize * std::mem::size_of::<i32>());
 
         let cube_count = CubeCount::Static(num_blocks, 1, 1);
-        let cube_dim = CubeDim::new(BLOCK_SIZE, 1, 1);
+        let cube_dim = CubeDim::new(&client, BLOCK_SIZE as usize);
 
+        // SAFETY: Handles are valid and properly sized for the kernel operation
         unsafe {
-            ternary_hamming_kernel::launch_unchecked::<i32, CudaRuntime>(
+            ternary_hamming_kernel::launch::<CudaRuntime>(
                 &client,
                 cube_count,
                 cube_dim,
-                ArrayArg::from_raw_parts::<i32>(&a_handle, len as usize, 1),
-                ArrayArg::from_raw_parts::<i32>(&b_handle, len as usize, 1),
-                ArrayArg::from_raw_parts::<i32>(&partial_counts_handle, num_blocks as usize, 1),
+                ArrayArg::from_raw_parts::<u32>(&a_handle, len as usize, 1),
+                ArrayArg::from_raw_parts::<u32>(&b_handle, len as usize, 1),
+                ArrayArg::from_raw_parts::<u32>(&partial_counts_handle, num_blocks as usize, 1),
                 len,
-            );
+            ).map_err(|e| CoreError::kernel(format!("hamming kernel launch failed: {e}")))?;
         }
 
-        let result_handle = client.empty(std::mem::size_of::<i32>());
+        let result_handle = client.empty(std::mem::size_of::<u32>());
 
+        // SAFETY: Handles are valid and properly sized for the kernel operation
         unsafe {
-            final_reduction_kernel::launch_unchecked::<i32, CudaRuntime>(
+            final_reduction_kernel::launch::<CudaRuntime>(
                 &client,
                 CubeCount::Static(1, 1, 1),
-                CubeDim::new(BLOCK_SIZE, 1, 1),
-                ArrayArg::from_raw_parts::<i32>(&partial_counts_handle, num_blocks as usize, 1),
-                ArrayArg::from_raw_parts::<i32>(&result_handle, 1, 1),
+                CubeDim::new(&client, BLOCK_SIZE as usize),
+                ArrayArg::from_raw_parts::<u32>(&partial_counts_handle, num_blocks as usize, 1),
+                ArrayArg::from_raw_parts::<u32>(&result_handle, 1, 1),
                 num_blocks,
-            );
+            ).map_err(|e| CoreError::kernel(format!("final_reduction kernel launch failed: {e}")))?;
         }
 
-        let result_bytes = client.read_one(result_handle.binding());
-        let result: Vec<i32> = i32::from_bytes(&result_bytes).to_vec();
+        let result_bytes = client.read_one(result_handle);
+        let result: Vec<u32> = u32::from_bytes(&result_bytes).to_vec();
 
         Ok(result.first().copied().unwrap_or(0) as usize)
     }
@@ -581,24 +588,25 @@ impl GpuDispatchable for GpuRandom {
             seeds.push(mixed5 ^ (mixed5 >> 16));
         }
 
-        let seeds_handle = client.create(u32::as_bytes(&seeds));
+        let seeds_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(u32::as_bytes(&seeds).to_vec()));
         let out_handle = client.empty(input.dim * std::mem::size_of::<u32>());
 
         let cube_count = CubeCount::Static(grid_size(len, BLOCK_SIZE), 1, 1);
-        let cube_dim = CubeDim::new(BLOCK_SIZE, 1, 1);
+        let cube_dim = CubeDim::new(&client, BLOCK_SIZE as usize);
 
+        // SAFETY: Handles are valid and properly sized for the kernel operation
         unsafe {
-            ternary_random_kernel::launch_unchecked::<CudaRuntime>(
+            ternary_random_kernel::launch::<CudaRuntime>(
                 &client,
                 cube_count,
                 cube_dim,
                 ArrayArg::from_raw_parts::<u32>(&out_handle, input.dim, 1),
                 ArrayArg::from_raw_parts::<u32>(&seeds_handle, input.dim, 1),
                 len,
-            );
+            ).map_err(|e| CoreError::kernel(format!("random kernel launch failed: {e}")))?;
         }
 
-        let out_bytes = client.read_one(out_handle.binding());
+        let out_bytes = client.read_one(out_handle);
         let out_u32: Vec<u32> = u32::from_bytes(&out_bytes).to_vec();
 
         // Convert u32 (0, 1, 2) to i32 for encoding

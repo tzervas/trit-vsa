@@ -60,6 +60,7 @@
 #![allow(clippy::cast_lossless)] // We use explicit casts for clarity
 
 pub mod arithmetic;
+pub mod dispatch;
 mod error;
 mod packed;
 pub mod simd;
@@ -72,6 +73,7 @@ mod word;
 #[cfg(feature = "cuda")]
 pub mod gpu;
 
+pub use dispatch::{DispatchConfig, Format, DevicePreference, Operation, TritVector};
 pub use error::{Result, TernaryError};
 pub use packed::PackedTritVec;
 pub use sparse::SparseVec;

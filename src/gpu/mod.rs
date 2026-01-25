@@ -47,3 +47,156 @@ pub use ops::{
     GpuBind, GpuBundle, GpuCosineSimilarity, GpuDotSimilarity, GpuHammingDistance, GpuRandom,
     GpuUnbind, RandomInput,
 };
+
+// Re-export types from rust-ai-core for convenience
+use crate::{PackedTritVec, Result};
+use candle_core::Device;
+use rust_ai_core::GpuDispatchable;
+
+// =============================================================================
+// CONVENIENCE WRAPPER FUNCTIONS FOR DISPATCH.RS
+// =============================================================================
+
+/// Convenience wrapper for GPU dot product similarity.
+///
+/// Automatically dispatches to GPU or CPU based on the provided device.
+///
+/// # Arguments
+///
+/// * `a` - First ternary vector
+/// * `b` - Second ternary vector
+/// * `device` - Target device (CPU or CUDA)
+///
+/// # Returns
+///
+/// Dot product similarity as i32 (range: -n to +n where n = vector dimension)
+///
+/// # Errors
+///
+/// Returns error if:
+/// - Vectors have mismatched dimensions
+/// - GPU kernel launch fails
+/// - Device allocation fails
+pub fn gpu_dot(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<i32> {
+    GpuDotSimilarity.dispatch(&(a.clone(), b.clone()), device).map_err(Into::into)
+}
+
+/// Convenience wrapper for GPU cosine similarity.
+///
+/// Automatically dispatches to GPU or CPU based on the provided device.
+///
+/// # Arguments
+///
+/// * `a` - First ternary vector
+/// * `b` - Second ternary vector
+/// * `device` - Target device (CPU or CUDA)
+///
+/// # Returns
+///
+/// Cosine similarity as f32 (range: -1.0 to +1.0)
+///
+/// # Errors
+///
+/// Returns error if:
+/// - Vectors have mismatched dimensions
+/// - GPU kernel launch fails
+/// - Device allocation fails
+pub fn gpu_cosine_similarity(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<f32> {
+    GpuCosineSimilarity.dispatch(&(a.clone(), b.clone()), device).map_err(Into::into)
+}
+
+/// Convenience wrapper for GPU bind operation.
+///
+/// Automatically dispatches to GPU or CPU based on the provided device.
+///
+/// # Arguments
+///
+/// * `a` - First ternary vector
+/// * `b` - Second ternary vector
+/// * `device` - Target device (CPU or CUDA)
+///
+/// # Returns
+///
+/// Bound vector as PackedTritVec
+///
+/// # Errors
+///
+/// Returns error if:
+/// - Vectors have mismatched dimensions
+/// - GPU kernel launch fails
+/// - Device allocation fails
+pub fn gpu_bind(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<PackedTritVec> {
+    GpuBind.dispatch(&(a.clone(), b.clone()), device).map_err(Into::into)
+}
+
+/// Convenience wrapper for GPU unbind operation.
+///
+/// Automatically dispatches to GPU or CPU based on the provided device.
+///
+/// # Arguments
+///
+/// * `a` - First ternary vector
+/// * `b` - Second ternary vector
+/// * `device` - Target device (CPU or CUDA)
+///
+/// # Returns
+///
+/// Unbound vector as PackedTritVec
+///
+/// # Errors
+///
+/// Returns error if:
+/// - Vectors have mismatched dimensions
+/// - GPU kernel launch fails
+/// - Device allocation fails
+pub fn gpu_unbind(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<PackedTritVec> {
+    GpuUnbind.dispatch(&(a.clone(), b.clone()), device).map_err(Into::into)
+}
+
+/// Convenience wrapper for GPU bundle operation.
+///
+/// Automatically dispatches to GPU or CPU based on the provided device.
+///
+/// # Arguments
+///
+/// * `vectors` - Slice of ternary vectors to bundle
+/// * `device` - Target device (CPU or CUDA)
+///
+/// # Returns
+///
+/// Bundled vector as PackedTritVec
+///
+/// # Errors
+///
+/// Returns error if:
+/// - Input vector list is empty
+/// - Vectors have mismatched dimensions
+/// - GPU kernel launch fails
+/// - Device allocation fails
+pub fn gpu_bundle(vectors: &[PackedTritVec], device: &Device) -> Result<PackedTritVec> {
+    GpuBundle.dispatch(&vectors.to_vec(), device).map_err(Into::into)
+}
+
+/// Convenience wrapper for GPU Hamming distance.
+///
+/// Automatically dispatches to GPU or CPU based on the provided device.
+///
+/// # Arguments
+///
+/// * `a` - First ternary vector
+/// * `b` - Second ternary vector
+/// * `device` - Target device (CPU or CUDA)
+///
+/// # Returns
+///
+/// Hamming distance as usize (number of differing positions)
+///
+/// # Errors
+///
+/// Returns error if:
+/// - Vectors have mismatched dimensions
+/// - GPU kernel launch fails
+/// - Device allocation fails
+pub fn gpu_hamming_distance(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<usize> {
+    GpuHammingDistance.dispatch(&(a.clone(), b.clone()), device).map_err(Into::into)
+}
