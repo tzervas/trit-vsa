@@ -1,0 +1,32 @@
+[package]
+name = "ternary-rs"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.92"
+license = "MIT"
+authors = ["Tyler Zervas <tz-dev@vectorweight.com>"]
+description = "Balanced ternary arithmetic library with bitsliced storage and VSA operations"
+repository = "https://github.com/tzervas/ternary-rs"
+homepage = "https://github.com/tzervas/ternary-rs"
+documentation = "https://docs.rs/ternary-rs"
+keywords = ["ternary", "arithmetic", "vsa", "hyperdimensional", "bitsliced"]
+categories = ["mathematics", "data-structures", "science"]
+
+[dependencies]
+thiserror = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+
+[dev-dependencies]
+criterion = "0.5"
+proptest = "1.4"
+
+[features]
+default = []
+simd = []
+
+[lints]
+workspace = true
+
+[[bench]]
+name = "ternary_ops"
+harness = false
