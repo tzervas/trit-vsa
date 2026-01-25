@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.0] - 2025-01-24
+## [0.1.0] - 2026-01-24
 
 ### Added
 
@@ -35,10 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Technical Details
 
-- Minimum Rust version: 1.92
+- Minimum Rust version: 1.70
 - Zero unsafe code in core types
 - Thread-safe (all types are Send + Sync)
 - No-std compatible (with alloc)
 
-[Unreleased]: https://github.com/your-org/trit-vsa/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/your-org/trit-vsa/releases/tag/v0.1.0
+[Unreleased]: https://github.com/tzervas/trit-vsa/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/tzervas/trit-vsa/releases/tag/v0.1.0
