@@ -48,6 +48,18 @@ use super::kernels::{
 // HELPER FUNCTIONS
 // =============================================================================
 
+/// Check that two vectors have the same dimensions.
+fn check_dims(a: &PackedTritVec, b: &PackedTritVec) -> Result<()> {
+    if a.len() != b.len() {
+        return Err(CoreError::dim_mismatch(format!(
+            "vectors must have same dimensions: {} vs {}",
+            a.len(),
+            b.len()
+        )));
+    }
+    Ok(())
+}
+
 /// Convert PackedTritVec to encoded i32 array for GPU processing.
 ///
 /// Encoding: -1 → 0, 0 → 1, +1 → 2
@@ -176,6 +188,7 @@ impl GpuDispatchable for GpuBind {
     fn dispatch_cpu(&self, input: &Self::Input, device: &Device) -> Result<Self::Output> {
         warn_if_cpu(device, "trit-vsa");
         let (a, b) = input;
+        check_dims(a, b)?;
         Ok(vsa::bind(a, b))
     }
 }
@@ -248,6 +261,7 @@ impl GpuDispatchable for GpuUnbind {
     fn dispatch_cpu(&self, input: &Self::Input, device: &Device) -> Result<Self::Output> {
         warn_if_cpu(device, "trit-vsa");
         let (a, b) = input;
+        check_dims(a, b)?;
         Ok(vsa::unbind(a, b))
     }
 }
@@ -438,6 +452,7 @@ impl GpuDispatchable for GpuDotSimilarity {
     fn dispatch_cpu(&self, input: &Self::Input, device: &Device) -> Result<Self::Output> {
         warn_if_cpu(device, "trit-vsa");
         let (a, b) = input;
+        check_dims(a, b)?;
         Ok(a.dot(b))
     }
 }
@@ -528,6 +543,7 @@ impl GpuDispatchable for GpuHammingDistance {
     fn dispatch_cpu(&self, input: &Self::Input, device: &Device) -> Result<Self::Output> {
         warn_if_cpu(device, "trit-vsa");
         let (a, b) = input;
+        check_dims(a, b)?;
         Ok(vsa::hamming_distance(a, b))
     }
 }
@@ -684,6 +700,7 @@ impl GpuDispatchable for GpuCosineSimilarity {
     fn dispatch_cpu(&self, input: &Self::Input, device: &Device) -> Result<Self::Output> {
         warn_if_cpu(device, "trit-vsa");
         let (a, b) = input;
+        check_dims(a, b)?;
         Ok(vsa::cosine_similarity(a, b))
     }
 }
