@@ -81,9 +81,7 @@ impl CubeclBackend {
     /// Get a CUDA client for kernel execution.
     fn get_client(&self) -> std::result::Result<ComputeClient<CudaRuntime>, CoreError> {
         if !self.available {
-            return Err(CoreError::device_unavailable(
-                "CUDA is not available on this system",
-            ));
+            return Err(CoreError::device_not_available("CUDA"));
         }
         Ok(CudaRuntime::client(&Default::default()))
     }
