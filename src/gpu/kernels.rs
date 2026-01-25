@@ -70,13 +70,12 @@ pub fn ternary_bind_kernel<I: Int>(
 ) {
     let idx = ABSOLUTE_POS;
     if idx < (len as usize) {
-        // Balanced ternary bind: (a + b + 1) mod 3
-        // Using manual modulo to avoid potential issues with negative intermediate values
-        let sum = a[idx] + b[idx] + I::new(1);
-        // Compute mod 3: result = sum - (sum / 3) * 3
-        // For values in range [1, 5], this gives correct results
-        let quotient = sum / I::new(3);
-        out[idx] = sum - quotient * I::new(3);
+        // Balanced ternary bind: (a - b + 3) mod 3
+        // Bind is subtraction in balanced ternary
+        // Adding 3 ensures we stay non-negative before modulo
+        let diff = a[idx] - b[idx] + I::new(3);
+        let quotient = diff / I::new(3);
+        out[idx] = diff - quotient * I::new(3);
     }
 }
 
@@ -100,11 +99,11 @@ pub fn ternary_unbind_kernel<I: Int>(
 ) {
     let idx = ABSOLUTE_POS;
     if idx < (len as usize) {
-        // Unbind: (a - b + 3) mod 3
-        // Adding 3 ensures we stay non-negative before modulo
-        let diff = a[idx] - b[idx] + I::new(3);
-        let quotient = diff / I::new(3);
-        out[idx] = diff - quotient * I::new(3);
+        // Unbind: (a + b) mod 3
+        // Unbind is addition in balanced ternary (inverse of bind)
+        let sum = a[idx] + b[idx];
+        let quotient = sum / I::new(3);
+        out[idx] = sum - quotient * I::new(3);
     }
 }
 
