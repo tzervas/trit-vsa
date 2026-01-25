@@ -62,6 +62,7 @@
 pub mod arithmetic;
 pub mod dispatch;
 mod error;
+pub mod kernels;
 mod packed;
 pub mod simd;
 mod sparse;
@@ -75,6 +76,10 @@ pub mod gpu;
 
 pub use dispatch::{DispatchConfig, Format, DevicePreference, Operation, TritVector};
 pub use error::{Result, TernaryError};
+pub use kernels::{
+    BackendConfig, BackendPreference, CpuBackend, DynamicBackend, RandomConfig, TernaryBackend,
+    get_backend, get_backend_for_size,
+};
 pub use packed::PackedTritVec;
 pub use sparse::SparseVec;
 pub use trit::Trit;
@@ -87,6 +92,9 @@ pub use gpu::{
     GpuUnbind, RandomInput,
 };
 
+#[cfg(feature = "cuda")]
+pub use kernels::CubeclBackend;
+
 /// Prelude module for convenient imports.
 ///
 /// # Example
@@ -96,6 +104,9 @@ pub use gpu::{
 /// ```
 pub mod prelude {
     pub use crate::arithmetic::{from_balanced_ternary, to_balanced_ternary};
+    pub use crate::kernels::{
+        BackendConfig, BackendPreference, CpuBackend, TernaryBackend, get_backend,
+    };
     pub use crate::packed::PackedTritVec;
     pub use crate::sparse::SparseVec;
     pub use crate::trit::Trit;

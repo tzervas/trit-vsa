@@ -3,6 +3,29 @@
 //! This module provides intelligent routing between different ternary representations
 //! and kernel implementations based on operation type, data characteristics, and hardware.
 //!
+//! # Architecture
+//!
+//! This module integrates with the modular [`kernels`](crate::kernels) backend system:
+//!
+//! ```text
+//! TritVector                   DispatchConfig
+//!     |                              |
+//!     v                              v
+//! +----------+                +--------------+
+//! | dispatch |  ----------->  | BackendConfig|
+//! +----------+                +--------------+
+//!     |                              |
+//!     v                              v
+//! +-------------------------------------------+
+//! |           TernaryBackend (trait)          |
+//! +-------------------------------------------+
+//!     |           |              |
+//!     v           v              v
+//! +------+   +--------+     +------+
+//! |  CPU |   | CubeCL |     | Burn |
+//! +------+   +--------+     +------+
+//! ```
+//!
 //! # Ternary Representations
 //!
 //! ## Tritsliced (Implied Zero with Positive/Negative Planes)
@@ -41,7 +64,7 @@
 //!
 //! The dispatcher selects the optimal kernel based on:
 //! 1. **Sparsity**: Sparse format for > 90% zeros
-//! 2. **Operation type**: Popcount ops → tritsliced, arithmetic → tritpacked
+//! 2. **Operation type**: Popcount ops -> tritsliced, arithmetic -> tritpacked
 //! 3. **Vector size**: GPU for large (> 4096 dims), CPU for small
 //! 4. **Hardware**: SIMD availability, GPU presence
 //!
@@ -63,7 +86,22 @@
 //!     .gpu_threshold(8192);
 //! let result = a.bind(&b, &config);
 //! ```
+//!
+//! # Using the Modular Backend System
+//!
+//! For more control, use the [`kernels`](crate::kernels) module directly:
+//!
+//! ```rust,ignore
+//! use trit_vsa::kernels::{get_backend, BackendConfig, TernaryBackend};
+//!
+//! let config = BackendConfig::auto();
+//! let backend = get_backend(&config);
+//!
+//! let result = backend.bind(&a, &b)?;
+//! let similarity = backend.dot_similarity(&a, &b)?;
+//! ```
 
+use crate::kernels::{self, BackendConfig, BackendPreference, TernaryBackend};
 use crate::{PackedTritVec, SparseVec, Trit, Result, TernaryError};
 
 /// Preferred kernel format for operations.
@@ -207,9 +245,9 @@ impl Operation {
 /// Unified ternary vector type with smart dispatch.
 #[derive(Debug, Clone)]
 pub enum TritVector {
-    /// Tritsliced format (PackedTritVec)
+    /// Tritsliced format ([`PackedTritVec`])
     Sliced(PackedTritVec),
-    /// Sparse format (SparseVec)
+    /// Sparse format ([`SparseVec`])
     Sparse(SparseVec),
 }
 
@@ -294,7 +332,7 @@ impl TritVector {
 
         // Check if sparse format would be beneficial
         let self_sparse = self.sparsity() > config.sparse_threshold;
-        let other_sparse = other.map_or(false, |o| o.sparsity() > config.sparse_threshold);
+        let other_sparse = other.is_some_and(|o| o.sparsity() > config.sparse_threshold);
 
         if op.benefits_from_sparse() && self_sparse && other_sparse {
             return Format::Sparse;
@@ -304,45 +342,34 @@ impl TritVector {
         op.preferred_format()
     }
 
-    /// Determine if GPU should be used based on configuration.
-    #[cfg_attr(not(feature = "cuda"), allow(dead_code))]
-    fn should_use_gpu(&self, config: &DispatchConfig) -> bool {
-        match config.device {
-            DevicePreference::Cpu => false,
-            DevicePreference::Gpu => {
-                #[cfg(feature = "cuda")]
-                {
-                    true
-                }
-                #[cfg(not(feature = "cuda"))]
-                {
-                    false
-                }
-            }
-            DevicePreference::Auto => {
-                #[cfg(feature = "cuda")]
-                {
-                    self.dims() >= config.gpu_threshold
-                }
-                #[cfg(not(feature = "cuda"))]
-                {
-                    false
-                }
-            }
+    /// Convert [`DispatchConfig`] to [`BackendConfig`] for the kernels module.
+    fn to_backend_config(config: &DispatchConfig) -> BackendConfig {
+        let preferred = match config.device {
+            DevicePreference::Cpu => BackendPreference::Cpu,
+            DevicePreference::Gpu => BackendPreference::Gpu,
+            DevicePreference::Auto => BackendPreference::Auto,
+        };
+
+        BackendConfig {
+            preferred,
+            gpu_threshold: config.gpu_threshold,
+            use_simd: true,
         }
     }
 
-    /// Get a device instance for GPU dispatch.
-    #[cfg(feature = "cuda")]
-    #[allow(dead_code)]
-    fn get_dispatch_device(&self, _config: &DispatchConfig) -> candle_core::Device {
-        // Always try to get CUDA device, fall back to CPU if unavailable
-        // The gpu wrapper functions handle device preference internally
-        rust_ai_core::get_device(&rust_ai_core::DeviceConfig::default())
-            .unwrap_or(candle_core::Device::Cpu)
+    /// Get the appropriate backend based on config and problem size.
+    fn get_backend_for_config(&self, config: &DispatchConfig) -> kernels::DynamicBackend {
+        let backend_config = Self::to_backend_config(config);
+        kernels::get_backend_for_size(&backend_config, self.dims())
     }
 
     /// Compute dot product with smart dispatch.
+    ///
+    /// Uses the modular backend system for automatic CPU/GPU selection.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if vectors have mismatched dimensions.
     pub fn dot(&self, other: &Self, config: &DispatchConfig) -> Result<i32> {
         if self.dims() != other.dims() {
             return Err(TernaryError::DimensionMismatch {
@@ -355,37 +382,28 @@ impl TritVector {
 
         match format {
             Format::Sparse => {
+                // Sparse path: use direct sparse dot product
                 let a = self.to_sparse();
                 let b = other.to_sparse();
                 Ok(a.dot(&b))
             }
             Format::Tritsliced | Format::Tritpacked | Format::Auto => {
+                // Use modular backend system
                 let a = self.to_packed();
                 let b = other.to_packed();
-
-                // GPU dispatch when enabled and appropriate
-                #[cfg(feature = "cuda")]
-                if self.should_use_gpu(config) {
-                    let device = self.get_dispatch_device(config);
-                    return crate::gpu::gpu_dot(&a, &b, &device);
-                }
-
-                // SIMD CPU fallback
-                #[cfg(feature = "simd")]
-                {
-                    return Ok(crate::simd::simd_dot(&a, &b));
-                }
-
-                // Scalar CPU fallback
-                #[cfg(not(feature = "simd"))]
-                {
-                    Ok(a.dot(&b))
-                }
+                let backend = self.get_backend_for_config(config);
+                backend.dot_similarity(&a, &b)
             }
         }
     }
 
     /// Compute cosine similarity with smart dispatch.
+    ///
+    /// Uses the modular backend system for automatic CPU/GPU selection.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if vectors have mismatched dimensions.
     pub fn cosine_similarity(&self, other: &Self, config: &DispatchConfig) -> Result<f32> {
         if self.dims() != other.dims() {
             return Err(TernaryError::DimensionMismatch {
@@ -398,29 +416,28 @@ impl TritVector {
 
         match format {
             Format::Sparse => {
+                // Sparse path: use direct sparse cosine similarity
                 let a = self.to_sparse();
                 let b = other.to_sparse();
                 Ok(crate::vsa::cosine_similarity_sparse(&a, &b))
             }
             Format::Tritsliced | Format::Tritpacked | Format::Auto => {
+                // Use modular backend system
                 let a = self.to_packed();
                 let b = other.to_packed();
-
-                // GPU dispatch when enabled and appropriate
-                #[cfg(feature = "cuda")]
-                if self.should_use_gpu(config) {
-                    let device = self.get_dispatch_device(config);
-                    return crate::gpu::gpu_cosine_similarity(&a, &b, &device);
-                }
-
-                // CPU fallback
-                Ok(crate::vsa::cosine_similarity(&a, &b))
+                let backend = self.get_backend_for_config(config);
+                backend.cosine_similarity(&a, &b)
             }
         }
     }
 
     /// Bind operation with smart dispatch.
-    #[allow(unused_variables)]
+    ///
+    /// Uses the modular backend system for automatic CPU/GPU selection.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if vectors have mismatched dimensions.
     pub fn bind(&self, other: &Self, config: &DispatchConfig) -> Result<Self> {
         if self.dims() != other.dims() {
             return Err(TernaryError::DimensionMismatch {
@@ -432,20 +449,19 @@ impl TritVector {
         let a = self.to_packed();
         let b = other.to_packed();
 
-        // GPU dispatch when enabled and appropriate
-        #[cfg(feature = "cuda")]
-        if self.should_use_gpu(config) {
-            let device = self.get_dispatch_device(config);
-            let result = crate::gpu::gpu_bind(&a, &b, &device)?;
-            return Ok(Self::Sliced(result));
-        }
-
-        // CPU fallback
-        Ok(Self::Sliced(crate::vsa::bind(&a, &b)))
+        // Use modular backend system
+        let backend = self.get_backend_for_config(config);
+        let result = backend.bind(&a, &b)?;
+        Ok(Self::Sliced(result))
     }
 
     /// Unbind operation with smart dispatch.
-    #[allow(unused_variables)]
+    ///
+    /// Uses the modular backend system for automatic CPU/GPU selection.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if vectors have mismatched dimensions.
     pub fn unbind(&self, other: &Self, config: &DispatchConfig) -> Result<Self> {
         if self.dims() != other.dims() {
             return Err(TernaryError::DimensionMismatch {
@@ -457,19 +473,19 @@ impl TritVector {
         let a = self.to_packed();
         let b = other.to_packed();
 
-        // GPU dispatch when enabled and appropriate
-        #[cfg(feature = "cuda")]
-        if self.should_use_gpu(config) {
-            let device = self.get_dispatch_device(config);
-            let result = crate::gpu::gpu_unbind(&a, &b, &device)?;
-            return Ok(Self::Sliced(result));
-        }
-
-        // CPU fallback
-        Ok(Self::Sliced(crate::vsa::unbind(&a, &b)))
+        // Use modular backend system
+        let backend = self.get_backend_for_config(config);
+        let result = backend.unbind(&a, &b)?;
+        Ok(Self::Sliced(result))
     }
 
     /// Bundle (majority voting) with smart dispatch.
+    ///
+    /// Uses the modular backend system for automatic CPU/GPU selection.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if vectors have mismatched dimensions.
     pub fn bundle(&self, other: &Self, config: &DispatchConfig) -> Result<Self> {
         if self.dims() != other.dims() {
             return Err(TernaryError::DimensionMismatch {
@@ -481,8 +497,33 @@ impl TritVector {
         let a = self.to_packed();
         let b = other.to_packed();
 
-        let _ = config;
-        Ok(Self::Sliced(crate::vsa::bundle(&a, &b)))
+        // Use modular backend system
+        let backend = self.get_backend_for_config(config);
+        let result = backend.bundle(&[&a, &b])?;
+        Ok(Self::Sliced(result))
+    }
+
+    /// Compute Hamming distance with smart dispatch.
+    ///
+    /// Uses the modular backend system for automatic CPU/GPU selection.
+    ///
+    /// # Errors
+    ///
+    /// Returns error if vectors have mismatched dimensions.
+    pub fn hamming_distance(&self, other: &Self, config: &DispatchConfig) -> Result<usize> {
+        if self.dims() != other.dims() {
+            return Err(TernaryError::DimensionMismatch {
+                expected: self.dims(),
+                actual: other.dims(),
+            });
+        }
+
+        let a = self.to_packed();
+        let b = other.to_packed();
+
+        // Use modular backend system
+        let backend = self.get_backend_for_config(config);
+        backend.hamming_distance(&a, &b)
     }
 
     /// Negate all elements.
@@ -525,6 +566,20 @@ pub struct DispatchStats {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn make_test_vector(values: &[i8]) -> TritVector {
+        let mut packed = PackedTritVec::new(values.len());
+        for (i, &v) in values.iter().enumerate() {
+            let trit = match v {
+                -1 => Trit::N,
+                0 => Trit::Z,
+                1 => Trit::P,
+                _ => panic!("Invalid trit value"),
+            };
+            packed.set(i, trit);
+        }
+        TritVector::Sliced(packed)
+    }
 
     #[test]
     fn test_dispatch_config_default() {
@@ -569,5 +624,83 @@ mod tests {
 
         let result = a.dot(&b, &config);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_bind_unbind_with_backend() {
+        let a = make_test_vector(&[1, -1, 0, 1, -1, 0, 1]);
+        let b = make_test_vector(&[-1, 1, 0, -1, 1, 0, -1]);
+        let config = DispatchConfig::cpu_only();
+
+        let bound = a.bind(&b, &config).unwrap();
+        let recovered = bound.unbind(&b, &config).unwrap();
+
+        // Verify bind/unbind inverse property
+        for i in 0..a.dims() {
+            assert_eq!(recovered.get(i), a.get(i), "mismatch at position {i}");
+        }
+    }
+
+    #[test]
+    fn test_bundle_with_backend() {
+        let a = make_test_vector(&[1, 1, -1, 0, 0]);
+        let b = make_test_vector(&[1, -1, -1, 1, -1]);
+        let config = DispatchConfig::cpu_only();
+
+        let bundled = a.bundle(&b, &config).unwrap();
+
+        // Position 0: 1, 1 -> 1
+        assert_eq!(bundled.get(0), Trit::P);
+        // Position 1: 1, -1 -> 0 (tie)
+        assert_eq!(bundled.get(1), Trit::Z);
+        // Position 2: -1, -1 -> -1
+        assert_eq!(bundled.get(2), Trit::N);
+    }
+
+    #[test]
+    fn test_cosine_similarity_with_backend() {
+        let a = make_test_vector(&[1, 1, -1, -1]);
+        let config = DispatchConfig::cpu_only();
+
+        let sim = a.cosine_similarity(&a, &config).unwrap();
+        assert!((sim - 1.0).abs() < 0.001);
+    }
+
+    #[test]
+    fn test_hamming_distance_with_backend() {
+        let a = make_test_vector(&[1, 0, -1, 1]);
+        let b = make_test_vector(&[1, -1, -1, 0]);
+        let config = DispatchConfig::cpu_only();
+
+        let dist = a.hamming_distance(&b, &config).unwrap();
+        // Positions 1 and 3 differ
+        assert_eq!(dist, 2);
+    }
+
+    #[test]
+    fn test_backend_config_conversion() {
+        let config = DispatchConfig::cpu_only();
+        let backend_config = TritVector::to_backend_config(&config);
+        assert_eq!(backend_config.preferred, BackendPreference::Cpu);
+
+        let config = DispatchConfig::auto().with_device(DevicePreference::Gpu);
+        let backend_config = TritVector::to_backend_config(&config);
+        assert_eq!(backend_config.preferred, BackendPreference::Gpu);
+    }
+
+    #[test]
+    fn test_auto_backend_selection() {
+        let small_vec = TritVector::new(100);
+        let large_vec = TritVector::new(10000);
+
+        let config = DispatchConfig::auto().with_gpu_threshold(5000);
+
+        // Small vector should use CPU
+        let backend = small_vec.get_backend_for_config(&config);
+        assert!(backend.name().starts_with("cpu"));
+
+        // Large vector would use GPU if available, otherwise CPU
+        let backend = large_vec.get_backend_for_config(&config);
+        assert!(backend.is_available());
     }
 }
