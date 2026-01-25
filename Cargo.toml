@@ -13,16 +13,21 @@ keywords = ["ternary", "arithmetic", "vsa", "hyperdimensional", "bitsliced"]
 categories = ["mathematics", "data-structures", "science"]
 
 [dependencies]
-thiserror = "1.0"
-serde = { version = "1.0", features = ["derive"] }
+thiserror = "2.0.18"
+serde = { version = "1.0.228", features = ["derive"] }
+rust-ai-core = { path = "../rust-ai-core", optional = true }
+candle-core = { workspace = true, optional = true }
+cubecl = { version = "0.9.0", optional = true }
+cubecl-cuda = { version = "0.9.0", optional = true }
 
 [dev-dependencies]
-criterion = "0.5"
-proptest = "1.4"
+criterion = "0.8.1"
+proptest = "1.9.0"
 
 [features]
 default = []
 simd = []
+cuda = ["dep:rust-ai-core", "dep:candle-core", "dep:cubecl", "dep:cubecl-cuda", "rust-ai-core/cuda"]
 
 [lints]
 workspace = true

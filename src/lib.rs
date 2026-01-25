@@ -49,6 +49,7 @@
 //!
 //! - `default`: No additional features
 //! - `simd`: Enable AVX2/NEON SIMD optimizations
+//! - `cuda`: Enable GPU acceleration via CubeCL
 
 #![warn(missing_docs)]
 #![warn(clippy::pedantic)]
@@ -68,12 +69,21 @@ mod tryte;
 pub mod vsa;
 mod word;
 
+#[cfg(feature = "cuda")]
+pub mod gpu;
+
 pub use error::{Result, TernaryError};
 pub use packed::PackedTritVec;
 pub use sparse::SparseVec;
 pub use trit::Trit;
 pub use tryte::{Tryte3, TRYTE3_MAX, TRYTE3_MIN};
 pub use word::{Word6, WORD6_MAX, WORD6_MIN};
+
+#[cfg(feature = "cuda")]
+pub use gpu::{
+    GpuBind, GpuBundle, GpuCosineSimilarity, GpuDotSimilarity, GpuHammingDistance, GpuRandom,
+    GpuUnbind, RandomInput,
+};
 
 /// Prelude module for convenient imports.
 ///
