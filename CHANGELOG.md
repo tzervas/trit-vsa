@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-01-25
+
+### Added
+- Modular kernel architecture (`TernaryBackend` trait)
+- `CpuBackend` with optional SIMD acceleration
+- `CubeclBackend` for CUDA GPU acceleration via CubeCL
+- `BurnBackend` stub for future Burn framework integration
+- `DynamicBackend` wrapper for runtime dispatch
+- `BackendConfig` for flexible backend selection
+- Smart dispatch with automatic GPU/CPU selection based on vector dimensions
+- Convenience GPU wrapper functions in `gpu::mod.rs`
+
+### Changed
+- Migrated all CubeCL kernels to 0.9 API
+- Fixed bind/unbind kernel formulas (bind uses subtraction, unbind uses addition)
+- Added dimension checks to all GPU dispatch operations
+- Improved error handling with proper `CoreError` integration
+
+### Fixed
+- Kernel position variables now use correct types for CubeCL 0.9
+- SharedMemory initialization with proper usize suffix
+- Array indexing with explicit usize casts
+- `sync_cube()` replaces deprecated `sync_units()`
+
 ## [0.1.1] - 2026-01-24
 
 ### Changed

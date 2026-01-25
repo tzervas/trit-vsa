@@ -49,6 +49,7 @@
 //!
 //! - `default`: No additional features
 //! - `simd`: Enable AVX2/NEON SIMD optimizations
+//! - `cuda`: Enable GPU acceleration via CubeCL
 
 #![warn(missing_docs)]
 #![warn(clippy::pedantic)]
@@ -59,7 +60,9 @@
 #![allow(clippy::cast_lossless)] // We use explicit casts for clarity
 
 pub mod arithmetic;
+pub mod dispatch;
 mod error;
+pub mod kernels;
 mod packed;
 pub mod simd;
 mod sparse;
@@ -68,12 +71,29 @@ mod tryte;
 pub mod vsa;
 mod word;
 
+#[cfg(feature = "cuda")]
+pub mod gpu;
+
+pub use dispatch::{DispatchConfig, Format, DevicePreference, Operation, TritVector};
 pub use error::{Result, TernaryError};
+pub use kernels::{
+    BackendConfig, BackendPreference, CpuBackend, DynamicBackend, RandomConfig, TernaryBackend,
+    get_backend, get_backend_for_size,
+};
 pub use packed::PackedTritVec;
 pub use sparse::SparseVec;
 pub use trit::Trit;
 pub use tryte::{Tryte3, TRYTE3_MAX, TRYTE3_MIN};
 pub use word::{Word6, WORD6_MAX, WORD6_MIN};
+
+#[cfg(feature = "cuda")]
+pub use gpu::{
+    GpuBind, GpuBundle, GpuCosineSimilarity, GpuDotSimilarity, GpuHammingDistance, GpuRandom,
+    GpuUnbind, RandomInput,
+};
+
+#[cfg(feature = "cuda")]
+pub use kernels::CubeclBackend;
 
 /// Prelude module for convenient imports.
 ///
@@ -84,6 +104,9 @@ pub use word::{Word6, WORD6_MAX, WORD6_MIN};
 /// ```
 pub mod prelude {
     pub use crate::arithmetic::{from_balanced_ternary, to_balanced_ternary};
+    pub use crate::kernels::{
+        BackendConfig, BackendPreference, CpuBackend, TernaryBackend, get_backend,
+    };
     pub use crate::packed::PackedTritVec;
     pub use crate::sparse::SparseVec;
     pub use crate::trit::Trit;

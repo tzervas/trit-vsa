@@ -221,6 +221,12 @@ impl SparseVec {
         }
     }
 
+    /// Get the number of dimensions.
+    #[must_use]
+    pub fn num_dims(&self) -> usize {
+        self.num_dims
+    }
+
     /// Count non-zero elements.
     #[must_use]
     pub fn count_nonzero(&self) -> usize {

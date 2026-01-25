@@ -45,4 +45,9 @@ pub enum TernaryError {
     /// Empty vector operation.
     #[error("operation not supported on empty vector")]
     EmptyVector,
+
+    /// GPU computation error (only available with cuda feature).
+    #[cfg(feature = "cuda")]
+    #[error("GPU computation error: {0}")]
+    GpuError(#[from] rust_ai_core::CoreError),
 }
