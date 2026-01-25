@@ -387,7 +387,10 @@ mod tests {
                 break;
             }
         }
-        assert!(different, "different seeds should produce different vectors");
+        assert!(
+            different,
+            "different seeds should produce different vectors"
+        );
     }
 
     #[test]

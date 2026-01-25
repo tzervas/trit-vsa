@@ -281,14 +281,7 @@ mod tests {
     #[test]
     fn test_add_ternary() {
         // Test various additions
-        let test_cases = [
-            (5, 3),
-            (10, 20),
-            (-5, 5),
-            (100, -50),
-            (0, 0),
-            (-100, -100),
-        ];
+        let test_cases = [(5, 3), (10, 20), (-5, 5), (100, -50), (0, 0), (-100, -100)];
 
         for (a, b) in test_cases {
             let ta = to_balanced_ternary(a, 1);
@@ -301,14 +294,7 @@ mod tests {
 
     #[test]
     fn test_multiply_ternary() {
-        let test_cases = [
-            (4, 2),
-            (3, 3),
-            (5, -2),
-            (-3, -4),
-            (0, 100),
-            (1, 50),
-        ];
+        let test_cases = [(4, 2), (3, 3), (5, -2), (-3, -4), (0, 100), (1, 50)];
 
         for (a, b) in test_cases {
             let ta = to_balanced_ternary(a, 1);

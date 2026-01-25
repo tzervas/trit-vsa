@@ -74,11 +74,11 @@ mod word;
 #[cfg(feature = "cuda")]
 pub mod gpu;
 
-pub use dispatch::{DispatchConfig, Format, DevicePreference, Operation, TritVector};
+pub use dispatch::{DevicePreference, DispatchConfig, Format, Operation, TritVector};
 pub use error::{Result, TernaryError};
 pub use kernels::{
-    BackendConfig, BackendPreference, CpuBackend, DynamicBackend, RandomConfig, TernaryBackend,
-    get_backend, get_backend_for_size,
+    get_backend, get_backend_for_size, BackendConfig, BackendPreference, CpuBackend,
+    DynamicBackend, RandomConfig, TernaryBackend,
 };
 pub use packed::PackedTritVec;
 pub use sparse::SparseVec;
@@ -105,7 +105,7 @@ pub use kernels::CubeclBackend;
 pub mod prelude {
     pub use crate::arithmetic::{from_balanced_ternary, to_balanced_ternary};
     pub use crate::kernels::{
-        BackendConfig, BackendPreference, CpuBackend, TernaryBackend, get_backend,
+        get_backend, BackendConfig, BackendPreference, CpuBackend, TernaryBackend,
     };
     pub use crate::packed::PackedTritVec;
     pub use crate::sparse::SparseVec;

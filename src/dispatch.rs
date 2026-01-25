@@ -102,7 +102,7 @@
 //! ```
 
 use crate::kernels::{self, BackendConfig, BackendPreference, TernaryBackend};
-use crate::{PackedTritVec, SparseVec, Trit, Result, TernaryError};
+use crate::{PackedTritVec, Result, SparseVec, TernaryError, Trit};
 
 /// Preferred kernel format for operations.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -324,7 +324,12 @@ impl TritVector {
     }
 
     /// Select optimal format based on operation and data characteristics.
-    fn select_format(&self, other: Option<&Self>, op: Operation, config: &DispatchConfig) -> Format {
+    fn select_format(
+        &self,
+        other: Option<&Self>,
+        op: Operation,
+        config: &DispatchConfig,
+    ) -> Format {
         // Explicit format preference overrides auto-selection
         if config.format != Format::Auto {
             return config.format;

@@ -179,7 +179,10 @@ mod tests {
         }
 
         let sim = cosine_similarity(&a, &a);
-        assert!((sim - 1.0).abs() < 0.001, "identical vectors should have similarity 1.0");
+        assert!(
+            (sim - 1.0).abs() < 0.001,
+            "identical vectors should have similarity 1.0"
+        );
     }
 
     #[test]
@@ -193,7 +196,10 @@ mod tests {
         }
 
         let sim = cosine_similarity(&a, &b);
-        assert!((sim - (-1.0)).abs() < 0.001, "opposite vectors should have similarity -1.0");
+        assert!(
+            (sim - (-1.0)).abs() < 0.001,
+            "opposite vectors should have similarity -1.0"
+        );
     }
 
     #[test]
@@ -212,7 +218,10 @@ mod tests {
         }
 
         let sim = cosine_similarity(&a, &b);
-        assert!(sim.abs() < 0.001, "orthogonal vectors should have similarity ~0");
+        assert!(
+            sim.abs() < 0.001,
+            "orthogonal vectors should have similarity ~0"
+        );
     }
 
     #[test]

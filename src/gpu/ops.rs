@@ -157,8 +157,12 @@ impl GpuDispatchable for GpuBind {
         let b_encoded = packed_to_encoded(b);
 
         // Create GPU buffers
-        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&a_encoded).to_vec()));
-        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&b_encoded).to_vec()));
+        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(
+            i32::as_bytes(&a_encoded).to_vec(),
+        ));
+        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(
+            i32::as_bytes(&b_encoded).to_vec(),
+        ));
         let out_handle = client.empty(a_encoded.len() * std::mem::size_of::<i32>());
 
         // Launch kernel
@@ -175,7 +179,8 @@ impl GpuDispatchable for GpuBind {
                 ArrayArg::from_raw_parts::<i32>(&b_handle, len as usize, 1),
                 ArrayArg::from_raw_parts::<i32>(&out_handle, len as usize, 1),
                 len,
-            ).map_err(|e| CoreError::kernel(format!("bind kernel launch failed: {e}")))?;
+            )
+            .map_err(|e| CoreError::kernel(format!("bind kernel launch failed: {e}")))?;
         }
 
         // Read back results
@@ -232,8 +237,12 @@ impl GpuDispatchable for GpuUnbind {
         let a_encoded = packed_to_encoded(a);
         let b_encoded = packed_to_encoded(b);
 
-        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&a_encoded).to_vec()));
-        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&b_encoded).to_vec()));
+        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(
+            i32::as_bytes(&a_encoded).to_vec(),
+        ));
+        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(
+            i32::as_bytes(&b_encoded).to_vec(),
+        ));
         let out_handle = client.empty(a_encoded.len() * std::mem::size_of::<i32>());
 
         let cube_count = CubeCount::Static(grid_size(len, BLOCK_SIZE), 1, 1);
@@ -249,7 +258,8 @@ impl GpuDispatchable for GpuUnbind {
                 ArrayArg::from_raw_parts::<i32>(&b_handle, len as usize, 1),
                 ArrayArg::from_raw_parts::<i32>(&out_handle, len as usize, 1),
                 len,
-            ).map_err(|e| CoreError::kernel(format!("unbind kernel launch failed: {e}")))?;
+            )
+            .map_err(|e| CoreError::kernel(format!("unbind kernel launch failed: {e}")))?;
         }
 
         let out_bytes = client.read_one(out_handle);
@@ -319,7 +329,9 @@ impl GpuDispatchable for GpuBundle {
             flattened.extend(packed_to_encoded(vec));
         }
 
-        let vectors_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&flattened).to_vec()));
+        let vectors_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(
+            i32::as_bytes(&flattened).to_vec(),
+        ));
         let out_handle = client.empty(dim * std::mem::size_of::<i32>());
 
         let cube_count = CubeCount::Static(grid_size(dim_u32, BLOCK_SIZE), 1, 1);
@@ -336,7 +348,8 @@ impl GpuDispatchable for GpuBundle {
                 ArrayArg::from_raw_parts::<i32>(&out_handle, dim, 1),
                 num_vectors,
                 dim_u32,
-            ).map_err(|e| CoreError::kernel(format!("bundle_small kernel launch failed: {e}")))?;
+            )
+            .map_err(|e| CoreError::kernel(format!("bundle_small kernel launch failed: {e}")))?;
         }
 
         let out_bytes = client.read_one(out_handle);
@@ -403,13 +416,16 @@ impl GpuDispatchable for GpuDotSimilarity {
         let a_encoded = packed_to_encoded(a);
         let b_encoded = packed_to_encoded(b);
 
-        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&a_encoded).to_vec()));
-        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&b_encoded).to_vec()));
+        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(
+            i32::as_bytes(&a_encoded).to_vec(),
+        ));
+        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(
+            i32::as_bytes(&b_encoded).to_vec(),
+        ));
 
         // Calculate number of blocks for reduction
         let num_blocks = grid_size(len, BLOCK_SIZE);
-        let partial_sums_handle =
-            client.empty(num_blocks as usize * std::mem::size_of::<i32>());
+        let partial_sums_handle = client.empty(num_blocks as usize * std::mem::size_of::<i32>());
 
         let cube_count = CubeCount::Static(num_blocks, 1, 1);
         let cube_dim = CubeDim::new(&client, BLOCK_SIZE as usize);
@@ -425,7 +441,8 @@ impl GpuDispatchable for GpuDotSimilarity {
                 ArrayArg::from_raw_parts::<u32>(&b_handle, len as usize, 1),
                 ArrayArg::from_raw_parts::<u32>(&partial_sums_handle, num_blocks as usize, 1),
                 len,
-            ).map_err(|e| CoreError::kernel(format!("dot kernel launch failed: {e}")))?;
+            )
+            .map_err(|e| CoreError::kernel(format!("dot kernel launch failed: {e}")))?;
         }
 
         // Final reduction: sum all partial results
@@ -440,7 +457,8 @@ impl GpuDispatchable for GpuDotSimilarity {
                 ArrayArg::from_raw_parts::<u32>(&partial_sums_handle, num_blocks as usize, 1),
                 ArrayArg::from_raw_parts::<u32>(&result_handle, 1, 1),
                 num_blocks,
-            ).map_err(|e| CoreError::kernel(format!("final_reduction kernel launch failed: {e}")))?;
+            )
+            .map_err(|e| CoreError::kernel(format!("final_reduction kernel launch failed: {e}")))?;
         }
 
         let result_bytes = client.read_one(result_handle);
@@ -497,12 +515,15 @@ impl GpuDispatchable for GpuHammingDistance {
         let a_encoded = packed_to_encoded(a);
         let b_encoded = packed_to_encoded(b);
 
-        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&a_encoded).to_vec()));
-        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(i32::as_bytes(&b_encoded).to_vec()));
+        let a_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(
+            i32::as_bytes(&a_encoded).to_vec(),
+        ));
+        let b_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(
+            i32::as_bytes(&b_encoded).to_vec(),
+        ));
 
         let num_blocks = grid_size(len, BLOCK_SIZE);
-        let partial_counts_handle =
-            client.empty(num_blocks as usize * std::mem::size_of::<i32>());
+        let partial_counts_handle = client.empty(num_blocks as usize * std::mem::size_of::<i32>());
 
         let cube_count = CubeCount::Static(num_blocks, 1, 1);
         let cube_dim = CubeDim::new(&client, BLOCK_SIZE as usize);
@@ -517,7 +538,8 @@ impl GpuDispatchable for GpuHammingDistance {
                 ArrayArg::from_raw_parts::<u32>(&b_handle, len as usize, 1),
                 ArrayArg::from_raw_parts::<u32>(&partial_counts_handle, num_blocks as usize, 1),
                 len,
-            ).map_err(|e| CoreError::kernel(format!("hamming kernel launch failed: {e}")))?;
+            )
+            .map_err(|e| CoreError::kernel(format!("hamming kernel launch failed: {e}")))?;
         }
 
         let result_handle = client.empty(std::mem::size_of::<u32>());
@@ -531,7 +553,8 @@ impl GpuDispatchable for GpuHammingDistance {
                 ArrayArg::from_raw_parts::<u32>(&partial_counts_handle, num_blocks as usize, 1),
                 ArrayArg::from_raw_parts::<u32>(&result_handle, 1, 1),
                 num_blocks,
-            ).map_err(|e| CoreError::kernel(format!("final_reduction kernel launch failed: {e}")))?;
+            )
+            .map_err(|e| CoreError::kernel(format!("final_reduction kernel launch failed: {e}")))?;
         }
 
         let result_bytes = client.read_one(result_handle);
@@ -596,7 +619,9 @@ impl GpuDispatchable for GpuRandom {
         let mut seeds = Vec::with_capacity(input.dim);
         for i in 0..input.dim {
             // Golden ratio hash mixing for unique seeds
-            let mixed = input.seed.wrapping_add((i as u32).wrapping_mul(2_654_435_769));
+            let mixed = input
+                .seed
+                .wrapping_add((i as u32).wrapping_mul(2_654_435_769));
             let mixed2 = mixed ^ (mixed >> 16);
             let mixed3 = mixed2.wrapping_mul(2_246_822_519);
             let mixed4 = mixed3 ^ (mixed3 >> 13);
@@ -604,7 +629,9 @@ impl GpuDispatchable for GpuRandom {
             seeds.push(mixed5 ^ (mixed5 >> 16));
         }
 
-        let seeds_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(u32::as_bytes(&seeds).to_vec()));
+        let seeds_handle = client.create(cubecl::bytes::Bytes::from_bytes_vec(
+            u32::as_bytes(&seeds).to_vec(),
+        ));
         let out_handle = client.empty(input.dim * std::mem::size_of::<u32>());
 
         let cube_count = CubeCount::Static(grid_size(len, BLOCK_SIZE), 1, 1);
@@ -619,7 +646,8 @@ impl GpuDispatchable for GpuRandom {
                 ArrayArg::from_raw_parts::<u32>(&out_handle, input.dim, 1),
                 ArrayArg::from_raw_parts::<u32>(&seeds_handle, input.dim, 1),
                 len,
-            ).map_err(|e| CoreError::kernel(format!("random kernel launch failed: {e}")))?;
+            )
+            .map_err(|e| CoreError::kernel(format!("random kernel launch failed: {e}")))?;
         }
 
         let out_bytes = client.read_one(out_handle);
@@ -768,9 +796,7 @@ mod tests {
         let bound = GpuBind
             .dispatch_cpu(&(a.clone(), b.clone()), &Device::Cpu)
             .unwrap();
-        let recovered = GpuUnbind
-            .dispatch_cpu(&(bound, b), &Device::Cpu)
-            .unwrap();
+        let recovered = GpuUnbind.dispatch_cpu(&(bound, b), &Device::Cpu).unwrap();
 
         for i in 0..4 {
             assert_eq!(recovered.get(i), a.get(i));

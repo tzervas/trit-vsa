@@ -496,7 +496,11 @@ mod tests {
         let recovered = encoded_to_packed(&encoded, original.len());
 
         for i in 0..original.len() {
-            assert_eq!(original.get(i), recovered.get(i), "mismatch at position {i}");
+            assert_eq!(
+                original.get(i),
+                recovered.get(i),
+                "mismatch at position {i}"
+            );
         }
     }
 

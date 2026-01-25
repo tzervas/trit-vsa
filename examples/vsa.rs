@@ -2,7 +2,7 @@
 //!
 //! Run with: `cargo run --example vsa`
 
-use trit_vsa::{PackedTritVec, Trit, vsa};
+use trit_vsa::{vsa, PackedTritVec, Trit};
 
 fn main() {
     println!("=== trit-vsa VSA Example ===\n");
@@ -22,9 +22,18 @@ fn main() {
     println!("\n2. Bundle operation (superposition)");
     let pets = vsa::bundle(&dog, &cat);
     println!("   pets = bundle(dog, cat)");
-    println!("   similarity(pets, dog) = {:.3}", vsa::cosine_similarity(&pets, &dog));
-    println!("   similarity(pets, cat) = {:.3}", vsa::cosine_similarity(&pets, &cat));
-    println!("   similarity(pets, animal) = {:.3}", vsa::cosine_similarity(&pets, &animal));
+    println!(
+        "   similarity(pets, dog) = {:.3}",
+        vsa::cosine_similarity(&pets, &dog)
+    );
+    println!(
+        "   similarity(pets, cat) = {:.3}",
+        vsa::cosine_similarity(&pets, &cat)
+    );
+    println!(
+        "   similarity(pets, animal) = {:.3}",
+        vsa::cosine_similarity(&pets, &animal)
+    );
 
     // Bind: create associations
     println!("\n3. Bind operation (association)");
@@ -36,9 +45,18 @@ fn main() {
     // Query: what is dog?
     println!("\n4. Query: What is dog? (unbind dog_is_animal with dog)");
     let query_result = vsa::unbind(&dog_is_animal, &dog);
-    println!("   similarity(result, animal) = {:.3}", vsa::cosine_similarity(&query_result, &animal));
-    println!("   similarity(result, pet) = {:.3}", vsa::cosine_similarity(&query_result, &pet));
-    println!("   similarity(result, cat) = {:.3}", vsa::cosine_similarity(&query_result, &cat));
+    println!(
+        "   similarity(result, animal) = {:.3}",
+        vsa::cosine_similarity(&query_result, &animal)
+    );
+    println!(
+        "   similarity(result, pet) = {:.3}",
+        vsa::cosine_similarity(&query_result, &pet)
+    );
+    println!(
+        "   similarity(result, cat) = {:.3}",
+        vsa::cosine_similarity(&query_result, &cat)
+    );
 
     // Bundle multiple associations
     println!("\n5. Complex structure: bundle of bindings");
@@ -48,15 +66,25 @@ fn main() {
     // Can recover both facts
     let recovered_animal = vsa::unbind(&knowledge, &dog);
     let recovered_pet = vsa::unbind(&knowledge, &cat);
-    println!("   unbind(knowledge, dog) ~ animal: {:.3}",
-             vsa::cosine_similarity(&recovered_animal, &animal));
-    println!("   unbind(knowledge, cat) ~ pet: {:.3}",
-             vsa::cosine_similarity(&recovered_pet, &pet));
+    println!(
+        "   unbind(knowledge, dog) ~ animal: {:.3}",
+        vsa::cosine_similarity(&recovered_animal, &animal)
+    );
+    println!(
+        "   unbind(knowledge, cat) ~ pet: {:.3}",
+        vsa::cosine_similarity(&recovered_pet, &pet)
+    );
 
     // Hamming distance
     println!("\n6. Distance metrics");
-    println!("   hamming(dog, cat) = {}", vsa::hamming_distance(&dog, &cat));
-    println!("   hamming(dog, dog) = {}", vsa::hamming_distance(&dog, &dog));
+    println!(
+        "   hamming(dog, cat) = {}",
+        vsa::hamming_distance(&dog, &cat)
+    );
+    println!(
+        "   hamming(dog, dog) = {}",
+        vsa::hamming_distance(&dog, &dog)
+    );
 
     println!("\nDone!");
 }

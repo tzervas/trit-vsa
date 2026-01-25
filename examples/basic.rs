@@ -28,7 +28,12 @@ fn main() {
 
     let (sum, carry) = x + y;
     let total = sum.value() + carry.value() as i32 * 27;
-    println!("   x + y = {} (sum={}, carry={})", total, sum.value(), carry.value());
+    println!(
+        "   x + y = {} (sum={}, carry={})",
+        total,
+        sum.value(),
+        carry.value()
+    );
 
     // Word6 - 6 trits
     println!("\n3. Word6 (6 trits, range -364 to +364)");
@@ -39,7 +44,12 @@ fn main() {
 
     let (sum, carry) = w1 + w2;
     let total = sum.value() + carry.value() as i32 * 729;
-    println!("   w1 + w2 = {} (sum={}, carry={})", total, sum.value(), carry.value());
+    println!(
+        "   w1 + w2 = {} (sum={}, carry={})",
+        total,
+        sum.value(),
+        carry.value()
+    );
 
     // PackedTritVec - high-dimensional vectors
     println!("\n4. PackedTritVec (bitsliced storage)");

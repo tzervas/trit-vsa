@@ -1,7 +1,7 @@
 //! Benchmarks for ternary operations.
 
 use criterion::{black_box, criterion_group, criterion_main, BenchmarkId, Criterion};
-use ternary_rs::{PackedTritVec, SparseVec, Trit};
+use trit_vsa::{PackedTritVec, SparseVec, Trit};
 
 fn bench_packed_dot(c: &mut Criterion) {
     let mut group = c.benchmark_group("packed_dot");
@@ -12,16 +12,22 @@ fn bench_packed_dot(c: &mut Criterion) {
 
         // Fill with pattern
         for i in 0..*size {
-            a.set(i, match i % 3 {
-                0 => Trit::P,
-                1 => Trit::N,
-                _ => Trit::Z,
-            });
-            b.set(i, match i % 5 {
-                0 | 1 => Trit::P,
-                2 | 3 => Trit::N,
-                _ => Trit::Z,
-            });
+            a.set(
+                i,
+                match i % 3 {
+                    0 => Trit::P,
+                    1 => Trit::N,
+                    _ => Trit::Z,
+                },
+            );
+            b.set(
+                i,
+                match i % 5 {
+                    0 | 1 => Trit::P,
+                    2 | 3 => Trit::N,
+                    _ => Trit::Z,
+                },
+            );
         }
 
         group.bench_with_input(BenchmarkId::new("scalar", size), size, |bench, _| {
@@ -43,7 +49,10 @@ fn bench_sparse_dot(c: &mut Criterion) {
         // Set sparse values
         for i in 0..*nonzero {
             a.set(i * (size / nonzero), Trit::P);
-            b.set(i * (size / nonzero), if i % 2 == 0 { Trit::P } else { Trit::N });
+            b.set(
+                i * (size / nonzero),
+                if i % 2 == 0 { Trit::P } else { Trit::N },
+            );
         }
 
         let label = format!("size={}_nonzero={}", size, nonzero);
@@ -68,7 +77,7 @@ fn bench_bundle(c: &mut Criterion) {
         }
 
         group.bench_with_input(BenchmarkId::new("two_vectors", size), size, |bench, _| {
-            bench.iter(|| black_box(ternary_rs::vsa::bundle(&a, &b)))
+            bench.iter(|| black_box(trit_vsa::vsa::bundle(&a, &b)))
         });
     }
 
@@ -89,8 +98,8 @@ fn bench_bind(c: &mut Criterion) {
 
         group.bench_with_input(BenchmarkId::new("bind_unbind", size), size, |bench, _| {
             bench.iter(|| {
-                let bound = ternary_rs::vsa::bind(&a, &b);
-                black_box(ternary_rs::vsa::unbind(&bound, &b))
+                let bound = trit_vsa::vsa::bind(&a, &b);
+                black_box(trit_vsa::vsa::unbind(&bound, &b))
             })
         });
     }
@@ -111,7 +120,7 @@ fn bench_cosine_similarity(c: &mut Criterion) {
         }
 
         group.bench_with_input(BenchmarkId::new("packed", size), size, |bench, _| {
-            bench.iter(|| black_box(ternary_rs::vsa::cosine_similarity(&a, &b)))
+            bench.iter(|| black_box(trit_vsa::vsa::cosine_similarity(&a, &b)))
         });
     }
 

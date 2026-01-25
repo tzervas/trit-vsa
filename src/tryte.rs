@@ -405,8 +405,8 @@ mod tests {
 
         let t = Tryte3::from_value(5).unwrap();
         let trits = t.to_trits();
-        let reconstructed = trits[0].value() as i32 + trits[1].value() as i32 * 3
-            + trits[2].value() as i32 * 9;
+        let reconstructed =
+            trits[0].value() as i32 + trits[1].value() as i32 * 3 + trits[2].value() as i32 * 9;
         assert_eq!(reconstructed, 5);
     }
 }

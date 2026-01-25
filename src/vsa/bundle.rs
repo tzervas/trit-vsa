@@ -131,7 +131,10 @@ mod tests {
     #[test]
     fn test_majority_trit_tie() {
         assert_eq!(majority_trit(&[Trit::P, Trit::N]), Trit::Z);
-        assert_eq!(majority_trit(&[Trit::P, Trit::N, Trit::P, Trit::N]), Trit::Z);
+        assert_eq!(
+            majority_trit(&[Trit::P, Trit::N, Trit::P, Trit::N]),
+            Trit::Z
+        );
     }
 
     #[test]

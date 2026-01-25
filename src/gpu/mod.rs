@@ -78,7 +78,9 @@ use rust_ai_core::GpuDispatchable;
 /// - GPU kernel launch fails
 /// - Device allocation fails
 pub fn gpu_dot(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<i32> {
-    GpuDotSimilarity.dispatch(&(a.clone(), b.clone()), device).map_err(Into::into)
+    GpuDotSimilarity
+        .dispatch(&(a.clone(), b.clone()), device)
+        .map_err(Into::into)
 }
 
 /// Convenience wrapper for GPU cosine similarity.
@@ -102,7 +104,9 @@ pub fn gpu_dot(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<
 /// - GPU kernel launch fails
 /// - Device allocation fails
 pub fn gpu_cosine_similarity(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<f32> {
-    GpuCosineSimilarity.dispatch(&(a.clone(), b.clone()), device).map_err(Into::into)
+    GpuCosineSimilarity
+        .dispatch(&(a.clone(), b.clone()), device)
+        .map_err(Into::into)
 }
 
 /// Convenience wrapper for GPU bind operation.
@@ -126,7 +130,9 @@ pub fn gpu_cosine_similarity(a: &PackedTritVec, b: &PackedTritVec, device: &Devi
 /// - GPU kernel launch fails
 /// - Device allocation fails
 pub fn gpu_bind(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<PackedTritVec> {
-    GpuBind.dispatch(&(a.clone(), b.clone()), device).map_err(Into::into)
+    GpuBind
+        .dispatch(&(a.clone(), b.clone()), device)
+        .map_err(Into::into)
 }
 
 /// Convenience wrapper for GPU unbind operation.
@@ -150,7 +156,9 @@ pub fn gpu_bind(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result
 /// - GPU kernel launch fails
 /// - Device allocation fails
 pub fn gpu_unbind(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<PackedTritVec> {
-    GpuUnbind.dispatch(&(a.clone(), b.clone()), device).map_err(Into::into)
+    GpuUnbind
+        .dispatch(&(a.clone(), b.clone()), device)
+        .map_err(Into::into)
 }
 
 /// Convenience wrapper for GPU bundle operation.
@@ -174,7 +182,9 @@ pub fn gpu_unbind(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Resu
 /// - GPU kernel launch fails
 /// - Device allocation fails
 pub fn gpu_bundle(vectors: &[PackedTritVec], device: &Device) -> Result<PackedTritVec> {
-    GpuBundle.dispatch(&vectors.to_vec(), device).map_err(Into::into)
+    GpuBundle
+        .dispatch(&vectors.to_vec(), device)
+        .map_err(Into::into)
 }
 
 /// Convenience wrapper for GPU Hamming distance.
@@ -197,6 +207,12 @@ pub fn gpu_bundle(vectors: &[PackedTritVec], device: &Device) -> Result<PackedTr
 /// - Vectors have mismatched dimensions
 /// - GPU kernel launch fails
 /// - Device allocation fails
-pub fn gpu_hamming_distance(a: &PackedTritVec, b: &PackedTritVec, device: &Device) -> Result<usize> {
-    GpuHammingDistance.dispatch(&(a.clone(), b.clone()), device).map_err(Into::into)
+pub fn gpu_hamming_distance(
+    a: &PackedTritVec,
+    b: &PackedTritVec,
+    device: &Device,
+) -> Result<usize> {
+    GpuHammingDistance
+        .dispatch(&(a.clone(), b.clone()), device)
+        .map_err(Into::into)
 }

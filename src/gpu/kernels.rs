@@ -298,37 +298,44 @@ pub fn ternary_dot_kernel(
     // Tree reduction within block
     // Block size is 256, so we do 8 iterations (256 -> 128 -> 64 -> 32 -> 16 -> 8 -> 4 -> 2 -> 1)
     if thread_idx < 128u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 128u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 128u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 64u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 64u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 64u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 32u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 32u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 32u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 16u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 16u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 16u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 8u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 8u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 8u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 4u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 4u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 4u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 2u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 2u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 2u32) as usize];
     }
     sync_cube();
 
@@ -374,37 +381,44 @@ pub fn ternary_hamming_kernel(
 
     // Tree reduction (same pattern as dot kernel)
     if thread_idx < 128u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 128u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 128u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 64u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 64u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 64u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 32u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 32u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 32u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 16u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 16u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 16u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 8u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 8u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 8u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 4u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 4u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 4u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 2u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 2u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 2u32) as usize];
     }
     sync_cube();
 
@@ -438,37 +452,44 @@ pub fn final_reduction_kernel(
 
     // Tree reduction
     if thread_idx < 128u32 && thread_idx + 128u32 < 256u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 128u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 128u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 64u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 64u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 64u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 32u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 32u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 32u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 16u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 16u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 16u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 8u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 8u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 8u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 4u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 4u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 4u32) as usize];
     }
     sync_cube();
 
     if thread_idx < 2u32 {
-        shared[thread_idx as usize] = shared[thread_idx as usize] + shared[(thread_idx + 2u32) as usize];
+        shared[thread_idx as usize] =
+            shared[thread_idx as usize] + shared[(thread_idx + 2u32) as usize];
     }
     sync_cube();
 
