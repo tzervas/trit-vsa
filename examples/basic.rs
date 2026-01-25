@@ -2,10 +2,10 @@
 //!
 //! Run with: `cargo run --example basic`
 
-use ternary_rs::{PackedTritVec, Trit, Tryte3, Word6};
+use trit_vsa::{PackedTritVec, Trit, Tryte3, Word6};
 
 fn main() {
-    println!("=== Ternary-rs Basic Example ===\n");
+    println!("=== trit-vsa Basic Example ===\n");
 
     // Trit operations
     println!("1. Trit Operations");

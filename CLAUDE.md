@@ -1,11 +1,11 @@
-# ternary-rs Development Guide
+# trit-vsa Development Guide
 
 Balanced ternary arithmetic library for the rust-ai workspace.
 
 ## Architecture Overview
 
 ```
-ternary-rs/
+trit-vsa/
 ├── src/
 │   ├── lib.rs          # Public API, prelude, crate docs
 │   ├── error.rs        # TernaryError enum
@@ -61,22 +61,22 @@ Trit::P (+1) → bits: 0b10
 
 ```bash
 # Run all tests
-cargo test -p ternary-rs
+cargo test -p trit-vsa
 
 # Run with verbose output
-cargo test -p ternary-rs -- --nocapture
+cargo test -p trit-vsa -- --nocapture
 
 # Check for warnings
-cargo clippy -p ternary-rs -- -W clippy::pedantic
+cargo clippy -p trit-vsa -- -W clippy::pedantic
 
 # Run benchmarks
-cargo bench -p ternary-rs
+cargo bench -p trit-vsa
 
 # Generate docs
-cargo doc -p ternary-rs --no-deps --open
+cargo doc -p trit-vsa --no-deps --open
 
 # Check SIMD feature
-cargo test -p ternary-rs --features simd
+cargo test -p trit-vsa --features simd
 ```
 
 ## Adding New Features
@@ -108,7 +108,7 @@ cargo test -p ternary-rs --features simd
 - Minimum Rust: 1.92
 - No-std compatible with `alloc`
 - Workspace dependencies: none (foundation crate)
-- Used by: bitnet-rs, unsloth-rs (optional)
+- Used by: bitnet-quantize, unsloth-rs (optional)
 
 ## Common Pitfalls
 

@@ -1,14 +1,14 @@
-# ternary-rs
+# trit-vsa
 
 A high-performance balanced ternary arithmetic library for Rust.
 
-[![Crates.io](https://img.shields.io/crates/v/ternary-rs.svg)](https://crates.io/crates/ternary-rs)
-[![Documentation](https://docs.rs/ternary-rs/badge.svg)](https://docs.rs/ternary-rs)
+[![Crates.io](https://img.shields.io/crates/v/trit-vsa.svg)](https://crates.io/crates/trit-vsa)
+[![Documentation](https://docs.rs/trit-vsa/badge.svg)](https://docs.rs/trit-vsa)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 ## Overview
 
-`ternary-rs` provides core primitives for balanced ternary arithmetic, including:
+`trit-vsa` provides core primitives for balanced ternary arithmetic, including:
 
 - **Trit**: Single balanced ternary digit {-1, 0, +1}
 - **Tryte3**: 3 trits packed in a byte (values -13 to +13)
@@ -23,13 +23,13 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ternary-rs = "0.1"
+trit-vsa = "0.1"
 ```
 
 ## Quick Start
 
 ```rust
-use ternary_rs::{Trit, Tryte3, PackedTritVec, vsa};
+use trit_vsa::{Trit, Tryte3, PackedTritVec, vsa};
 
 // Basic trit operations
 let a = Trit::P;  // +1
@@ -83,7 +83,7 @@ Enable SIMD optimizations with the `simd` feature:
 
 ```toml
 [dependencies]
-ternary-rs = { version = "0.1", features = ["simd"] }
+trit-vsa = { version = "0.1", features = ["simd"] }
 ```
 
 Supports:
@@ -99,7 +99,7 @@ Implements hyperdimensional computing operations:
 - **Similarity**: Cosine and Hamming metrics
 
 ```rust
-use ternary_rs::{PackedTritVec, Trit, vsa};
+use trit_vsa::{PackedTritVec, Trit, vsa};
 
 // Create symbol vectors
 let dog = PackedTritVec::random(10000);
@@ -128,12 +128,12 @@ Benchmarks on typical hardware show:
 Run benchmarks:
 
 ```bash
-cargo bench -p ternary-rs
+cargo bench -p trit-vsa
 ```
 
 ## Documentation
 
-Full API documentation: [docs.rs/ternary-rs](https://docs.rs/ternary-rs)
+Full API documentation: [docs.rs/trit-vsa](https://docs.rs/trit-vsa)
 
 ## References
 

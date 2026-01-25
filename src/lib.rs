@@ -14,7 +14,7 @@
 //! # Quick Start
 //!
 //! ```rust
-//! use ternary_rs::{Trit, PackedTritVec, vsa};
+//! use trit_vsa::{Trit, PackedTritVec, vsa};
 //!
 //! // Create a ternary vector
 //! let mut vec = PackedTritVec::new(1000);
@@ -80,7 +80,7 @@ pub use word::{Word6, WORD6_MAX, WORD6_MIN};
 /// # Example
 ///
 /// ```rust
-/// use ternary_rs::prelude::*;
+/// use trit_vsa::prelude::*;
 /// ```
 pub mod prelude {
     pub use crate::arithmetic::{from_balanced_ternary, to_balanced_ternary};

@@ -40,5 +40,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Thread-safe (all types are Send + Sync)
 - No-std compatible (with alloc)
 
-[Unreleased]: https://github.com/your-org/ternary-rs/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/your-org/ternary-rs/releases/tag/v0.1.0
+[Unreleased]: https://github.com/your-org/trit-vsa/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/your-org/trit-vsa/releases/tag/v0.1.0

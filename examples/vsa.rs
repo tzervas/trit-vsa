@@ -2,10 +2,10 @@
 //!
 //! Run with: `cargo run --example vsa`
 
-use ternary_rs::{PackedTritVec, Trit, vsa};
+use trit_vsa::{PackedTritVec, Trit, vsa};
 
 fn main() {
-    println!("=== Ternary-rs VSA Example ===\n");
+    println!("=== trit-vsa VSA Example ===\n");
 
     let dim = 10000; // High-dimensional vectors for VSA
 
