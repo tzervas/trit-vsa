@@ -25,7 +25,7 @@ use crate::error::{Result, TernaryError};
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::Trit;
+/// use trit_vsa::Trit;
 ///
 /// let neg = Trit::N;
 /// let zero = Trit::Z;
@@ -61,7 +61,7 @@ impl Trit {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::Trit;
+    /// use trit_vsa::Trit;
     ///
     /// assert_eq!(Trit::from_value(-1).unwrap(), Trit::N);
     /// assert_eq!(Trit::from_value(0).unwrap(), Trit::Z);
@@ -82,7 +82,7 @@ impl Trit {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::Trit;
+    /// use trit_vsa::Trit;
     ///
     /// assert_eq!(Trit::N.value(), -1);
     /// assert_eq!(Trit::Z.value(), 0);
@@ -123,7 +123,7 @@ impl Trit {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::Trit;
+    /// use trit_vsa::Trit;
     ///
     /// assert_eq!(Trit::P.to_bits(), (true, false));
     /// assert_eq!(Trit::Z.to_bits(), (false, false));
@@ -152,7 +152,7 @@ impl Trit {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::Trit;
+    /// use trit_vsa::Trit;
     ///
     /// assert_eq!(Trit::from_bits(true, false), Trit::P);
     /// assert_eq!(Trit::from_bits(false, false), Trit::Z);
@@ -177,7 +177,7 @@ impl Trit {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::Trit;
+    /// use trit_vsa::Trit;
     ///
     /// // 1 + 1 = 2 = -1 + 3*1 (result=-1, carry=1)
     /// assert_eq!(Trit::P.add_with_carry(Trit::P), (Trit::N, Trit::P));
@@ -218,7 +218,7 @@ impl Trit {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::Trit;
+    /// use trit_vsa::Trit;
     ///
     /// // Bind/unbind property
     /// let a = Trit::P;
@@ -246,7 +246,7 @@ impl Trit {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::Trit;
+    /// use trit_vsa::Trit;
     ///
     /// let a = Trit::N;
     /// let b = Trit::P;

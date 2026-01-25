@@ -30,7 +30,7 @@ use crate::trit::Trit;
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{SparseVec, Trit};
+/// use trit_vsa::{SparseVec, Trit};
 ///
 /// let mut vec = SparseVec::new(1000);
 /// vec.set(10, Trit::P);

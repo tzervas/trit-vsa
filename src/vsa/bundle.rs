@@ -13,7 +13,7 @@ use crate::trit::Trit;
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{Trit, vsa::majority_trit};
+/// use trit_vsa::{Trit, vsa::majority_trit};
 ///
 /// assert_eq!(majority_trit(&[Trit::P, Trit::P, Trit::N]), Trit::P);
 /// assert_eq!(majority_trit(&[Trit::P, Trit::N]), Trit::Z);  // Tie -> Z
@@ -45,7 +45,7 @@ pub fn majority_trit(trits: &[Trit]) -> Trit {
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{PackedTritVec, Trit, vsa::bundle};
+/// use trit_vsa::{PackedTritVec, Trit, vsa::bundle};
 ///
 /// let mut a = PackedTritVec::new(4);
 /// let mut b = PackedTritVec::new(4);
@@ -77,7 +77,7 @@ pub fn bundle(a: &PackedTritVec, b: &PackedTritVec) -> PackedTritVec {
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{PackedTritVec, Trit, vsa::bundle_many};
+/// use trit_vsa::{PackedTritVec, Trit, vsa::bundle_many};
 ///
 /// let mut a = PackedTritVec::new(4);
 /// let mut b = PackedTritVec::new(4);

@@ -38,7 +38,7 @@ pub const WORD6_MAX: i32 = 364;
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::Word6;
+/// use trit_vsa::Word6;
 ///
 /// let w = Word6::from_value(100).unwrap();
 /// assert_eq!(w.value(), 100);
@@ -63,7 +63,7 @@ impl Word6 {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::Word6;
+    /// use trit_vsa::Word6;
     ///
     /// let w = Word6::from_value(123).unwrap();
     /// assert_eq!(w.value(), 123);

@@ -38,7 +38,7 @@ pub const TRYTE3_MAX: i32 = 13;
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::Tryte3;
+/// use trit_vsa::Tryte3;
 ///
 /// let t = Tryte3::from_value(5).unwrap();
 /// assert_eq!(t.value(), 5);
@@ -66,7 +66,7 @@ impl Tryte3 {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::Tryte3;
+    /// use trit_vsa::Tryte3;
     ///
     /// let t = Tryte3::from_value(7).unwrap();
     /// assert_eq!(t.value(), 7);
@@ -92,7 +92,7 @@ impl Tryte3 {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::{Tryte3, Trit};
+    /// use trit_vsa::{Tryte3, Trit};
     ///
     /// let t = Tryte3::from_trits([Trit::P, Trit::Z, Trit::N]);
     /// // Value = 1 + 0*3 + (-1)*9 = 1 - 9 = -8

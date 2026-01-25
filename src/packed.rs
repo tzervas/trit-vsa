@@ -34,7 +34,7 @@ use crate::trit::Trit;
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{PackedTritVec, Trit};
+/// use trit_vsa::{PackedTritVec, Trit};
 ///
 /// let mut vec = PackedTritVec::new(100);
 /// vec.set(0, Trit::P);
@@ -67,7 +67,7 @@ impl PackedTritVec {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::PackedTritVec;
+    /// use trit_vsa::PackedTritVec;
     ///
     /// let vec = PackedTritVec::new(1000);
     /// assert_eq!(vec.len(), 1000);
@@ -117,7 +117,7 @@ impl PackedTritVec {
     /// # Examples
     ///
     /// ```
-    /// use ternary_rs::{PackedTritVec, Trit};
+    /// use trit_vsa::{PackedTritVec, Trit};
     ///
     /// let trits = [Trit::P, Trit::N, Trit::Z, Trit::P];
     /// let vec = PackedTritVec::from_trits(&trits);

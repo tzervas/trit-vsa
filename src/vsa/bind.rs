@@ -17,7 +17,7 @@ use crate::packed::PackedTritVec;
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{PackedTritVec, Trit, vsa::{bind, unbind}};
+/// use trit_vsa::{PackedTritVec, Trit, vsa::{bind, unbind}};
 ///
 /// let mut a = PackedTritVec::new(4);
 /// let mut b = PackedTritVec::new(4);
@@ -59,7 +59,7 @@ pub fn bind(a: &PackedTritVec, b: &PackedTritVec) -> PackedTritVec {
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{PackedTritVec, Trit, vsa::{bind, unbind}};
+/// use trit_vsa::{PackedTritVec, Trit, vsa::{bind, unbind}};
 ///
 /// let mut a = PackedTritVec::new(4);
 /// let mut b = PackedTritVec::new(4);
@@ -97,7 +97,7 @@ pub fn unbind(bound: &PackedTritVec, key: &PackedTritVec) -> PackedTritVec {
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{PackedTritVec, Trit, vsa::bind_many};
+/// use trit_vsa::{PackedTritVec, Trit, vsa::bind_many};
 ///
 /// let mut a = PackedTritVec::new(4);
 /// let mut b = PackedTritVec::new(4);

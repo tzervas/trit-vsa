@@ -20,7 +20,7 @@ use crate::word::Word6;
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{Trit, arithmetic::to_balanced_ternary};
+/// use trit_vsa::{Trit, arithmetic::to_balanced_ternary};
 ///
 /// let trits = to_balanced_ternary(5, 4);
 /// // 5 = -1 + (-1)*3 + 1*9 = -1 - 3 + 9 = 5
@@ -85,7 +85,7 @@ pub fn to_balanced_ternary(mut value: i64, min_trits: usize) -> Vec<Trit> {
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{Trit, arithmetic::from_balanced_ternary};
+/// use trit_vsa::{Trit, arithmetic::from_balanced_ternary};
 ///
 /// let trits = [Trit::N, Trit::N, Trit::P];  // 5
 /// assert_eq!(from_balanced_ternary(&trits), 5);
@@ -110,7 +110,7 @@ pub fn from_balanced_ternary(trits: &[Trit]) -> i64 {
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{Trit, arithmetic::{add_ternary, from_balanced_ternary}};
+/// use trit_vsa::{Trit, arithmetic::{add_ternary, from_balanced_ternary}};
 ///
 /// let a = [Trit::P, Trit::Z, Trit::P];  // 1 + 9 = 10
 /// let b = [Trit::N, Trit::P, Trit::Z];  // -1 + 3 = 2
@@ -151,7 +151,7 @@ pub fn add_ternary(a: &[Trit], b: &[Trit]) -> Vec<Trit> {
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{Trit, arithmetic::{multiply_ternary, from_balanced_ternary}};
+/// use trit_vsa::{Trit, arithmetic::{multiply_ternary, from_balanced_ternary}};
 ///
 /// let a = [Trit::P, Trit::P];  // 1 + 3 = 4
 /// let b = [Trit::N, Trit::P];  // -1 + 3 = 2
@@ -193,7 +193,7 @@ pub fn multiply_ternary(a: &[Trit], b: &[Trit]) -> Vec<Trit> {
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{Trit, arithmetic::{negate_ternary, from_balanced_ternary}};
+/// use trit_vsa::{Trit, arithmetic::{negate_ternary, from_balanced_ternary}};
 ///
 /// let a = [Trit::P, Trit::N, Trit::P];  // 1 - 3 + 9 = 7
 /// let neg = negate_ternary(&a);

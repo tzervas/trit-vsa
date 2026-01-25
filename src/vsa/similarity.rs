@@ -28,7 +28,7 @@ use crate::sparse::SparseVec;
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{PackedTritVec, Trit, vsa::cosine_similarity};
+/// use trit_vsa::{PackedTritVec, Trit, vsa::cosine_similarity};
 ///
 /// let mut a = PackedTritVec::new(4);
 /// let mut b = PackedTritVec::new(4);
@@ -92,7 +92,7 @@ pub fn cosine_similarity_sparse(a: &SparseVec, b: &SparseVec) -> f32 {
 /// # Examples
 ///
 /// ```
-/// use ternary_rs::{PackedTritVec, Trit, vsa::hamming_distance};
+/// use trit_vsa::{PackedTritVec, Trit, vsa::hamming_distance};
 ///
 /// let mut a = PackedTritVec::new(4);
 /// let mut b = PackedTritVec::new(4);
