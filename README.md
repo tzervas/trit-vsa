@@ -23,8 +23,10 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-trit-vsa = "0.1"
+trit-vsa = "0.2.0"
 ```
+
+See [Interface Bulletin `trit-vsa/pin`](docs/bulletins/trit-vsa-pin.md) for the declared consumer pin and fleet alignment notes.
 
 ## Quick Start
 
